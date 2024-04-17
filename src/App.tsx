@@ -1,81 +1,15 @@
 import "./App.css"
 import { useAppDispatch, useAppSelector } from "./app/hooks"
-import { Counter } from "./features/counter/Counter"
-import {
-  addPeriod,
-  selectBalance,
-} from "./features/finance-periods/periodsSlice"
-import { Quotes } from "./features/quotes/Quotes"
+import { addPeriod } from "./features/finance-periods/periodsSlice"
 
 const App = () => {
   const dispatch = useAppDispatch()
-  // const balance = useAppSelector(selectBalance("1"))
-  const str = "1"
+  const financePeriods = useAppSelector(state => state.periods)
   return (
     <div className="App">
-      {/* <span>{balance.startBalance}</span> */}
-      <button onClick={() => dispatch(addPeriod(str))}>+</button>
+      <h1>Finance tracker</h1>
     </div>
   )
 }
 
 export default App
-
-function Old() {
-  return (
-    <header className="App-header">
-      <Counter />
-      <p>
-        Edit <code>src/App.tsx</code> and save to reload.
-      </p>
-      <Quotes />
-      <span>
-        <span>Learn </span>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          React
-        </a>
-        <span>, </span>
-        <a
-          className="App-link"
-          href="https://redux.js.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Redux
-        </a>
-        <span>, </span>
-        <a
-          className="App-link"
-          href="https://redux-toolkit.js.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Redux Toolkit
-        </a>
-        <span>, </span>
-        <a
-          className="App-link"
-          href="https://react-redux.js.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          React Redux
-        </a>
-        ,<span> and </span>
-        <a
-          className="App-link"
-          href="https://reselect.js.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Reselect
-        </a>
-      </span>
-    </header>
-  )
-}

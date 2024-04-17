@@ -129,6 +129,6 @@ export const periodsSlice = createAppSlice({
   },
 })
 
-export const { addPeriod } = periodsSlice.actions
+export const { addPeriod, changeStartDate } = periodsSlice.actions
 export const { selectBalance } = periodsSlice.selectors
 export default periodsSlice.reducer
