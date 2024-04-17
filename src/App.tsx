@@ -1,9 +1,22 @@
 import "./App.css"
+import { useAppDispatch, useAppSelector } from "./app/hooks"
 import { Counter } from "./features/counter/Counter"
+import {
+  addPeriod,
+  selectBalance,
+} from "./features/finance-periods/periodsSlice"
 import { Quotes } from "./features/quotes/Quotes"
 
 const App = () => {
-  return <div className="App">hey</div>
+  const dispatch = useAppDispatch()
+  // const balance = useAppSelector(selectBalance("1"))
+  const str = "1"
+  return (
+    <div className="App">
+      {/* <span>{balance.startBalance}</span> */}
+      <button onClick={() => dispatch(addPeriod(str))}>+</button>
+    </div>
+  )
 }
 
 export default App
