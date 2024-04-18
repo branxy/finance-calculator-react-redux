@@ -9,22 +9,22 @@ interface AddTransactionProps {
   transactionType: "income" | "outcome"
   fixedPaymentsLength?: number
   variablePaymentsLength?: number
-  endBalance?: FinancePeriod["balance"]["endBalance"]
-}
-
-const today = getTodayDate()
-const sampleTransaction: CashFlowItem = {
-  id: uuidv4(),
-  title: "",
-  amount: 0,
-  date: today,
+  end_balance: FinancePeriod["end_balance"]
 }
 
 const AddTransaction: FunctionComponent<AddTransactionProps> = ({
   periodId,
   transactionType,
-  endBalance,
+  end_balance,
 }) => {
+  const today = getTodayDate()
+  const sampleTransaction: CashFlowItem = {
+    id: uuidv4(),
+    period_id: periodId,
+    title: "",
+    amount: 0,
+    date: today,
+  }
   const dispatch = useAppDispatch()
   const [newTransaction, setNewTransaction] =
     useState<CashFlowItem>(sampleTransaction)
@@ -53,7 +53,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
   }
 
   function submitPayment(payment: CashFlowItem, paymentType: string) {
-    if (typeof endBalance === "number") {
+    if (typeof end_balance === "number") {
       switch (paymentType) {
         case "fixed":
           // fix
@@ -78,7 +78,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
   }
 
   function submitIncome(transaction: CashFlowItem) {
-    const newEndBalance = endBalance && endBalance + transaction.amount
+    const newEndBalance = end_balance && end_balance + transaction.amount
 
     if (typeof newEndBalance === "number") {
       dispatch({

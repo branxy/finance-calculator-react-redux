@@ -7,27 +7,17 @@ import { type PayloadAction } from "@reduxjs/toolkit"
 const initialState: Periods = [
   {
     id: "1",
-    startDate: getTodayDate(),
-    daysToNewPeriod: undefined,
-    balance: {
-      startBalance: 0,
-      endBalance: 0,
-    },
+    start_date: getTodayDate(),
+    days_to_new_period: undefined,
+    start_balance: 0,
+    end_balance: 0,
     shortage: 0,
-    savings: {
-      stock: {
-        startAmount: 6000,
-        endAmount: 6000,
-      },
-      forwardPayments: {
-        startAmount: 12000,
-        endAmount: 12000,
-      },
-    },
-    compensation: {
-      stock: 0,
-      forwardPayments: 0,
-    },
+    stock_start_amount: 6000,
+    stock_end_amount: 6000,
+    forward_payments_start_amount: 12000,
+    forward_payments_end_amount: 12000,
+    stock_compensation: 0,
+    forward_payments_compensation: 0,
   },
 ]
 
@@ -37,46 +27,39 @@ export const periodsSlice = createAppSlice({
   reducers: create => ({
     addPeriod: create.reducer(
       (periods, action: PayloadAction<FinancePeriod["id"]>) => {
-        // updates previous periods' daysToNewPeriod
+        // updates previous periods' days_to_new_period
         if (typeof action.payload === "string") {
           const prevPeriod = periods.find(p => p.id === action.payload)
           if (prevPeriod) {
             // const currentPeriodTimestamp = new Date(getTodayDate()).getTime()
-            // const prevPeriodTimestamp = new Date(prevPeriod.startDate).getTime()
+            // const prevPeriodTimestamp = new Date(prevPeriod.start_date).getTime()
             const newDaysToNewPeriod = getDaysBetweenTwoDates(
-              prevPeriod.startDate,
+              prevPeriod.start_date,
             )
             console.log({ newDaysToNewPeriod })
-            prevPeriod.daysToNewPeriod = newDaysToNewPeriod
+            prevPeriod.days_to_new_period = newDaysToNewPeriod
 
             // adds new period to state
-            const prevEndBalance = prevPeriod.balance.endBalance
-            const prevShortage = prevPeriod.shortage
-            const prevSavings = prevPeriod.savings
+            const {
+              end_balance,
+              shortage,
+              stock_end_amount,
+              forward_payments_end_amount,
+            } = prevPeriod
 
             const newPeriod: FinancePeriod = {
               id: uuidv4(),
-              startDate: prevPeriod.startDate,
-              daysToNewPeriod: undefined,
-              balance: {
-                startBalance: prevEndBalance,
-                endBalance: prevEndBalance,
-              },
-              shortage: prevShortage,
-              savings: {
-                stock: {
-                  startAmount: prevSavings.stock.endAmount,
-                  endAmount: prevSavings.stock.endAmount,
-                },
-                forwardPayments: {
-                  startAmount: prevSavings.forwardPayments.endAmount,
-                  endAmount: prevSavings.forwardPayments.endAmount,
-                },
-              },
-              compensation: {
-                stock: 0,
-                forwardPayments: 0,
-              },
+              start_date: prevPeriod.start_date,
+              days_to_new_period: undefined,
+              start_balance: end_balance,
+              end_balance: end_balance,
+              shortage: shortage,
+              stock_start_amount: stock_end_amount,
+              stock_end_amount: stock_end_amount,
+              forward_payments_start_amount: forward_payments_end_amount,
+              forward_payments_end_amount: forward_payments_end_amount,
+              stock_compensation: 0,
+              forward_payments_compensation: 0,
             }
 
             periods.push(newPeriod)
@@ -88,35 +71,27 @@ export const periodsSlice = createAppSlice({
         }
       },
     ),
-    // changePeriod: create.reducer(
-    //   (periods, action: PayloadAction<FinancePeriod>) => {
-    //     const indexOfPeriodToUpdate = periods.findIndex(
-    //       p => p.id === action.payload.id,
-    //     )
-
-    //     state[indexOfPeriodToUpdate] = action.payload
-    //   },
-    // ),
     changeStartDate: create.reducer(
       (
         periods,
         action: PayloadAction<{
           periodId: FinancePeriod["id"]
-          newStartDate: FinancePeriod["startDate"]
+          newStartDate: FinancePeriod["start_date"]
         }>,
       ) => {
-        // update start date, daysToNewPeriod
+        // update start date, days_to_new_period
         const indexOfPeriodToUpdate = periods.findIndex(
           p => p.id === action.payload.periodId,
         )
         const currentPeriod = periods[indexOfPeriodToUpdate]
-        const nextPeriodStartDate = periods[indexOfPeriodToUpdate + 1].startDate
-        currentPeriod.startDate = action.payload.newStartDate
+        const nextPeriodStartDate =
+          periods[indexOfPeriodToUpdate + 1].start_date
+        currentPeriod.start_date = action.payload.newStartDate
 
         if (nextPeriodStartDate) {
-          // update daysToNewPeriod
-          currentPeriod.daysToNewPeriod = getDaysBetweenTwoDates(
-            currentPeriod.startDate,
+          // update days_to_new_period
+          currentPeriod.days_to_new_period = getDaysBetweenTwoDates(
+            currentPeriod.start_date,
             nextPeriodStartDate,
           )
         }
@@ -124,11 +99,10 @@ export const periodsSlice = createAppSlice({
     ),
   }),
   selectors: {
-    selectBalance: (periods, periodId) =>
-      periods.find(p => p.id === periodId)?.balance,
+    selectPeriods: state => state,
   },
 })
 
 export const { addPeriod, changeStartDate } = periodsSlice.actions
-export const { selectBalance } = periodsSlice.selectors
+export const { selectPeriods } = periodsSlice.selectors
 export default periodsSlice.reducer

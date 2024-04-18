@@ -1,9 +1,9 @@
 import { type FunctionComponent } from "react"
-import type { CashFlow } from "../types"
 import CashFlowListItem from "./CashFlowItem"
+import { type VariablePaymentsT } from "./Forecast"
 
 interface VariablePaymentsProps {
-  payments: CashFlow["payments"]["variable"]
+  payments: VariablePaymentsT
   sum: number
 }
 

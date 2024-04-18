@@ -1,48 +1,27 @@
 export interface FinancePeriod {
   id: string
-  startDate: string
-  daysToNewPeriod: number | undefined
-  balance: Balance
+  start_date: string
+  days_to_new_period?: number
+  start_balance: number
+  end_balance: number
+  stock_start_amount: number
+  stock_end_amount: number
+  forward_payments_start_amount: number
+  forward_payments_end_amount: number
   shortage: number
-  savings: Savings
-  compensation: Compensation
+  stock_compensation: number
+  forward_payments_compensation: number
 }
 
-interface Balance {
-  startBalance: number
-  endBalance: number
-}
-
-interface Savings {
-  stock: {
-    startAmount: number
-    endAmount: number
-  }
-  forwardPayments: {
-    startAmount: number
-    endAmount: number
-  }
-}
-
-interface Compensation {
-  stock: number
-  forwardPayments: number
-}
-
-export interface CashFlow {
-  periodId: FinancePeriod["id"]
-  earnings: CashFlowItem[]
-  payments: {
-    fixed: CashFlowItem[]
-    variable: CashFlowItem[]
-  }
-}
+export type Periods = FinancePeriod[]
 
 export interface CashFlowItem {
   id: string
+  period_id: FinancePeriod["id"]
+  type?: "earning" | "fixed-payment" | "variable-payment"
   title: string
   amount: number
   date: string
 }
 
-export type Periods = FinancePeriod[]
+export type CashFlowTable = CashFlowItem[]

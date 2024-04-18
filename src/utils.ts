@@ -8,8 +8,8 @@ export function getTodayDate() {
 }
 
 export function getDaysBetweenTwoDates(
-  lesserDate: FinancePeriod["startDate"],
-  greaterDate: FinancePeriod["startDate"] = today,
+  lesserDate: FinancePeriod["start_date"],
+  greaterDate: FinancePeriod["start_date"] = today,
 ) {
   const greaterPeriodTimestamp = new Date(greaterDate).getTime()
   const lesserPeriodTimestamp = new Date(lesserDate).getTime()

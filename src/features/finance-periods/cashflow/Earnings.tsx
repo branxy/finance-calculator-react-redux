@@ -1,18 +1,19 @@
 import { type FunctionComponent } from "react"
-import type { CashFlow, FinancePeriod } from "../types"
+import type { FinancePeriod } from "../types"
 import AddTransaction from "./AddTransaction"
 import CashFlowListItem from "./CashFlowItem"
+import { type EarningsT } from "./Forecast"
 
 interface EarningsProps {
   periodId: FinancePeriod["id"]
-  earnings: CashFlow["earnings"]
-  endBalance: FinancePeriod["balance"]["endBalance"]
+  earnings: EarningsT
+  end_balance: FinancePeriod["end_balance"]
 }
 
 const Earnings: FunctionComponent<EarningsProps> = ({
   periodId,
   earnings,
-  endBalance,
+  end_balance,
 }) => {
   return (
     <div className="earnings">
@@ -20,7 +21,7 @@ const Earnings: FunctionComponent<EarningsProps> = ({
         <AddTransaction
           periodId={periodId}
           transactionType="income"
-          endBalance={endBalance}
+          end_balance={end_balance}
         />
         {earnings.map(e => (
           <CashFlowListItem key={e.id} {...e} />
