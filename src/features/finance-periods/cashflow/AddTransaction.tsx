@@ -4,6 +4,8 @@ import type { CashFlowItem, FinancePeriod } from "../types"
 import { getTodayDate } from "../../../utils"
 import { useAppDispatch } from "../../../app/hooks"
 
+import "./AddTransaction.css"
+
 interface AddTransactionProps {
   periodId: FinancePeriod["id"]
   transactionType: "income" | "outcome"

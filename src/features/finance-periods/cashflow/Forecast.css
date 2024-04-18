@@ -1,0 +1,22 @@
+.forecast {
+  margin-top: 20px;
+}
+
+.forecast .balance,
+.forecast .shortage {
+  display: block;
+}
+
+.forecast .income {
+  border-bottom: 3px solid rgb(40, 215, 40);
+}
+
+.forecast .payments {
+  border-bottom: 3px solid red;
+}
+
+.compensation .item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}

@@ -1,6 +1,7 @@
 import { useState, type FunctionComponent } from "react"
 import type { CashFlowItem, FinancePeriod } from "../types"
 import { useAppDispatch } from "../../../app/hooks"
+import "./Forecast.css"
 
 export type EarningsT = {
   id: CashFlowItem["id"]

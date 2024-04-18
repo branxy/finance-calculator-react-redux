@@ -24,7 +24,7 @@ export const cashFlowSlice = createAppSlice({
 export const selectCashFlow = state => state.cashflow
 
 export const selectCashFlowById = (state, periodId: FinancePeriod["id"]) => {
-  return selectCashFlow(state).find(
+  return selectCashFlow(state).filter(
     (cashflow: CashFlowItem) => cashflow.period_id === periodId,
   )
 }

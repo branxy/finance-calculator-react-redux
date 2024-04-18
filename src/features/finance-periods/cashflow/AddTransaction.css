@@ -1,0 +1,22 @@
+.add-transaction {
+  /* border: 1px solid; */
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.add-transaction .form-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.add-transaction .form-item input,
+.add-transaction select {
+  flex: 1 0 auto;
+}
+
+.add-transaction .actions {
+  margin-top: 8px;
+}

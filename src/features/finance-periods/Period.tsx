@@ -13,7 +13,7 @@ import Forecast, {
 } from "./cashflow/Forecast"
 import { selectCashFlowById } from "./cashflow/cashFlowSlice"
 import Earnings from "./cashflow/Earnings"
-
+import "./Period.css"
 interface PeriodProps {
   index: number
   id: FinancePeriod["id"]
@@ -53,9 +53,9 @@ const Period: FunctionComponent<PeriodProps> = props => {
   console.log({ cashFlow })
 
   const earnings = cashFlow.filter(c => c.type === "earning") as EarningsT
-  const fixedPayments = cashFlow.filter(
-    c => c.type === "fixed-payment",
-  ) as FixedPaymentsT
+  const fixedPayments = [
+    ...cashFlow.filter(c => c.type === "fixed-payment"),
+  ] as FixedPaymentsT
   const fixedPaymentsSum = fixedPayments.reduce((sum, x) => {
     return sum + x.amount
   }, 0)

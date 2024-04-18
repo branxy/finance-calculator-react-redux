@@ -1,0 +1,10 @@
+.period {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.period .title {
+  cursor: pointer;
+}

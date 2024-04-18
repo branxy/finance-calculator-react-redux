@@ -1,0 +1,50 @@
+.payments-content {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.payments-list {
+  display: flex;
+  gap: 40px;
+}
+
+.dropdown {
+  border: 1px solid black;
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+.dropdown .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 36px;
+}
+
+.dropdown h3 {
+  margin-top: 0;
+}
+
+.dropdown .toggle {
+  border: none;
+}
+
+.dropdown .toggle:hover {
+  background-color: rgba(108, 196, 234, 0.3);
+}
+
+.dropdown.closed {
+  height: 46px;
+}
+
+.dropdown.closed .content {
+  display: none;
+}
+
+@media screen and (max-width: 768px) {
+  .payments-content {
+    flex-direction: column;
+  }
+}
