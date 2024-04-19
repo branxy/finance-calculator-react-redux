@@ -1,7 +1,7 @@
 import { useState, type FunctionComponent } from "react"
 import type { CashFlowTable, FinancePeriod } from "./types"
 import { useAppDispatch, useAppSelector } from "../../app/hooks"
-import { addPeriod, changeStartDate } from "./periodsSlice"
+import { addPeriod, changeStartBalance, changeStartDate } from "./periodsSlice"
 import Dropdown from "../../components/Dropdown"
 import AddTransaction from "./cashflow/AddTransaction"
 import FixedPayments from "./cashflow/FixedPayments"
@@ -11,12 +11,14 @@ import Forecast, {
   type EarningsT,
   type VariablePaymentsT,
 } from "./cashflow/Forecast"
-import { selectCashFlowById } from "./cashflow/cashFlowSlice"
+import { selectCashFlowById } from "./cashflow/cashflowSlice"
 import Earnings from "./cashflow/Earnings"
 import "./Period.css"
+
 interface PeriodProps {
   index: number
   id: FinancePeriod["id"]
+  user_id: FinancePeriod["user_id"]
   start_date: FinancePeriod["start_date"]
   start_balance: FinancePeriod["start_balance"]
   end_balance: FinancePeriod["end_balance"]
@@ -33,6 +35,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
   const {
     index,
     id,
+    user_id,
     start_date,
     start_balance,
     end_balance,
@@ -44,13 +47,12 @@ const Period: FunctionComponent<PeriodProps> = props => {
     days_to_new_period,
   } = props
   const [isEditingStartDate, setIsEditingStartDate] = useState(false)
-  const financePeriods = useAppSelector(state => state.periods)
   const cashFlow: CashFlowTable = useAppSelector(state =>
     selectCashFlowById(state, id),
   )
   const dispatch = useAppDispatch()
 
-  console.log({ cashFlow })
+  // console.log({ cashFlow })
 
   const earnings = cashFlow.filter(c => c.type === "earning") as EarningsT
   const fixedPayments = [
@@ -71,19 +73,19 @@ const Period: FunctionComponent<PeriodProps> = props => {
 
   function handleAddFinancePeriod() {
     // check
-    dispatch(addPeriod(id))
+    dispatch(addPeriod({ prevPeriodId: id, user_id }))
   }
 
   function handleStartBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (typeof Number(e.target.value) === "number" && financePeriods) {
+    if (typeof Number(e.target.value) === "number") {
       const newValue = Number(e.target.value)
       // fix
-      dispatch({
-        type: "changedStartBalance",
-        periodId: id,
-        start_balance: newValue,
-        end_balance: newValue,
-      })
+      dispatch(
+        changeStartBalance({
+          periodId: id,
+          newStartBalance: newValue,
+        }),
+      )
     }
   }
 

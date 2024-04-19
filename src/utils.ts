@@ -21,3 +21,6 @@ export function getDaysBetweenTwoDates(
 
   return daysBetweenPeriods
 }
+
+
+function calculatePeriodEndBalance() {}

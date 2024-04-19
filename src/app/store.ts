@@ -1,14 +1,11 @@
 import type { Action, ThunkAction } from "@reduxjs/toolkit"
 import { combineSlices, configureStore } from "@reduxjs/toolkit"
-import { setupListeners } from "@reduxjs/toolkit/query"
-import { counterSlice } from "../features/counter/counterSlice"
-import { quotesApiSlice } from "../features/quotes/quotesApiSlice"
 import { periodsSlice } from "../features/finance-periods/periodsSlice"
-import { cashFlowSlice } from "../features/finance-periods/cashflow/cashFlowSlice"
+import { cashflowSlice } from "../features/finance-periods/cashflow/cashflowSlice"
 
 // `combineSlices` automatically combines the reducers using
 // their `reducerPath`s, therefore we no longer need to call `combineReducers`.
-const rootReducer = combineSlices(periodsSlice, cashFlowSlice)
+const rootReducer = combineSlices(periodsSlice, cashflowSlice)
 // Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>
 

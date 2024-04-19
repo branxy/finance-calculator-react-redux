@@ -1,5 +1,6 @@
 export interface FinancePeriod {
   id: string
+  user_id: string
   start_date: string
   days_to_new_period?: number
   start_balance: number
@@ -24,4 +25,8 @@ export interface CashFlowItem {
   date: string
 }
 
-export type CashFlowTable = CashFlowItem[]
+export interface CashFlowTable {
+  cashflow: CashFlowItem[]
+  status: "idle" | "loading" | "succeeded" | "failed"
+  error: string | null
+}

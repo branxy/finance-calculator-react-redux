@@ -5,6 +5,7 @@ import { getTodayDate } from "../../../utils"
 import { useAppDispatch } from "../../../app/hooks"
 
 import "./AddTransaction.css"
+import { addFixedPayment } from "./cashflowSlice"
 
 interface AddTransactionProps {
   periodId: FinancePeriod["id"]
@@ -59,11 +60,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
       switch (paymentType) {
         case "fixed":
           // fix
-          dispatch({
-            type: "addFixedPayment",
-            periodId,
-            newTransaction: payment,
-          })
+          dispatch(addFixedPayment(payment))
           break
         case "variable":
           // fix
