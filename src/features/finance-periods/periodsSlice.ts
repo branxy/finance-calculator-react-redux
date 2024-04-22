@@ -7,6 +7,7 @@ import {
   uploadPeriod,
   updateStartDate,
   updatePeriodsBalance,
+  updateCompensation,
 } from "./api/periodsApi"
 import { type RootState } from "../../app/store"
 
@@ -16,8 +17,8 @@ const initialState: InitialState = {
       id: "1",
       user_id: uuidv4(),
       start_date: getTodayDate(),
-      start_balance: 0,
-      end_balance: 0,
+      start_balance: 26000,
+      end_balance: 26000,
       stock_start_amount: 6000,
       stock_end_amount: 6000,
       forward_payments_start_amount: 12000,
@@ -61,6 +62,24 @@ interface ValueToUpdate {
 }
 
 export type ValuesToUpdate = ValueToUpdate[]
+
+interface CompensationAmount {
+  stock: number
+  fp: number
+}
+
+interface PaymentSubmittedSingle {
+  periodId: FinancePeriod["id"]
+  periodIndex: number
+  newStartBalance: FinancePeriod["start_balance"]
+  newEndBalance: FinancePeriod["end_balance"]
+  newStockStart: FinancePeriod["stock_start_amount"]
+  newStockEnd: FinancePeriod["stock_end_amount"]
+  newFPStart: FinancePeriod["forward_payments_start_amount"]
+  newFPEnd: FinancePeriod["forward_payments_end_amount"]
+}
+
+export type PaymentSubmittedUpdates = PaymentSubmittedSingle[]
 
 export const periodsSlice = createAppSlice({
   name: "periods",
@@ -337,6 +356,129 @@ export const periodsSlice = createAppSlice({
         },
       },
     ),
+    compensationSubmitted: create.asyncThunk(
+      async (
+        {
+          periodId,
+          compensationAmount,
+        }: {
+          periodId: FinancePeriod["id"]
+          compensationAmount: CompensationAmount
+        },
+        { getState },
+      ) => {
+        // a compensation is submitted to cover low end_balance. What to update:
+        // 1. Current period:
+        // end_balance
+        // stock OR FP OR both
+        // 2. Future periods:
+        // start_balance
+        // end_balance
+        // stock OR FP OR both
+
+        const {
+          periods: { periods },
+        } = getState() as RootState
+        const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
+        const currentPeriod = periods[currentPeriodIndex]
+        const compensationSum = compensationAmount.stock + compensationAmount.fp
+
+        if (currentPeriod) {
+          const valuesToUpdate: PaymentSubmittedUpdates = []
+
+          for (let i = currentPeriodIndex; i < periods.length; i++) {
+            const p = periods[i]
+            let newStartBalance,
+              newEndBalance,
+              newStockStart,
+              newStockEnd,
+              newFPStart,
+              newFPEnd
+
+            if (p.id === currentPeriod.id) {
+              newStartBalance = p.start_balance
+              newEndBalance = p.end_balance + compensationSum
+              newStockStart = p.stock_start_amount
+              newStockEnd = p.stock_end_amount - compensationAmount.stock
+              newFPStart = p.forward_payments_start_amount
+              newFPEnd = p.forward_payments_end_amount - compensationAmount.fp
+            } else {
+              newStartBalance = p.start_balance + compensationSum
+              newEndBalance = p.end_balance + compensationSum
+              newStockStart = p.stock_start_amount - compensationAmount.stock
+              newStockEnd = p.stock_end_amount - compensationAmount.stock
+              newFPStart =
+                p.forward_payments_start_amount - compensationAmount.fp
+              newFPEnd = p.forward_payments_end_amount - compensationAmount.fp
+            }
+
+            valuesToUpdate.push({
+              periodId: p.id,
+              periodIndex: i,
+              newStartBalance,
+              newEndBalance,
+              newStockStart,
+              newStockEnd,
+              newFPStart,
+              newFPEnd,
+            })
+          }
+
+          const receivedValues = await updateCompensation(valuesToUpdate)
+
+          return { receivedValues }
+        } else {
+          throw new Error(`Period with id ${periodId} not found`)
+        }
+      },
+      {
+        pending: state => {
+          state.status = "loading"
+        },
+        rejected: (state, action) => {
+          state.status = "failed"
+        },
+        fulfilled: (state, action) => {
+          state.status = "succeeded"
+
+          const { periods } = state
+          const { receivedValues } = action.payload
+          const currentIndex = periods.findIndex(
+            p => p.id === receivedValues[0].periodId,
+          )
+
+          const valuesToMap = new Map(
+            receivedValues.map((obj: PaymentSubmittedSingle) => [
+              obj.periodId,
+              obj,
+            ]),
+          )
+
+          for (let i = currentIndex; i < periods.length; i++) {
+            const p = periods[i]
+            const newValue = valuesToMap.get(p.id)
+
+            if (newValue) {
+              const {
+                newStartBalance,
+                newEndBalance,
+                newStockStart,
+                newStockEnd,
+                newFPStart,
+                newFPEnd,
+              } = newValue as PaymentSubmittedSingle
+
+              p.start_balance = newStartBalance
+              p.end_balance = newEndBalance
+              p.stock_start_amount = newStockStart
+              p.stock_end_amount = newStockEnd
+              p.forward_payments_start_amount = newFPStart
+              p.forward_payments_end_amount = newFPEnd
+            }
+          }
+        },
+      },
+    ),
     deletedPeriod: create.asyncThunk(
       (periodId: FinancePeriod["id"]) => {
         // await supabase request
@@ -367,6 +509,7 @@ export const {
   changedStartDate,
   changedStartBalance,
   paymentSubmitted,
+  compensationSubmitted,
 } = periodsSlice.actions
 export const { selectPeriods } = periodsSlice.selectors
 export default periodsSlice.reducer

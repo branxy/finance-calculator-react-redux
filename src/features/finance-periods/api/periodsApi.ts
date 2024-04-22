@@ -1,5 +1,5 @@
 import { getTodayDate } from "../../../utils"
-import { type ValuesToUpdate } from "../periodsSlice"
+import { PaymentSubmittedUpdates, type ValuesToUpdate } from "../periodsSlice"
 import type { FinancePeriod, Periods } from "../types"
 import { v4 as uuidv4 } from "uuid"
 
@@ -36,5 +36,11 @@ export async function updateStartDate(
 export async function updatePeriodsBalance(
   periodsToUpdate: ValuesToUpdate,
 ): Promise<ValuesToUpdate> {
+  return new Promise(resolve => resolve(periodsToUpdate))
+}
+
+export async function updateCompensation(
+  periodsToUpdate: PaymentSubmittedUpdates,
+): Promise<PaymentSubmittedUpdates> {
   return new Promise(resolve => resolve(periodsToUpdate))
 }

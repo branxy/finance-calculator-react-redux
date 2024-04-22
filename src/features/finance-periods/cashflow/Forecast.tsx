@@ -2,6 +2,7 @@ import { useState, type FunctionComponent } from "react"
 import type { CashflowItem, FinancePeriod } from "../types"
 import { useAppDispatch } from "../../../app/hooks"
 import "./Forecast.css"
+import { compensationSubmitted } from "../periodsSlice"
 
 export type EarningsT = {
   id: CashflowItem["id"]
@@ -60,6 +61,10 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   const [sumToCompensateStock, setSumToCompensateStock] = useState(0)
   const [sumToCompensateForwardPayments, setSumToCompensateForwardPayments] =
     useState(0)
+  const compensationSum = sumToCompensateStock + sumToCompensateForwardPayments
+  const shortage = end_balance < 0 ? Math.abs(end_balance) : 0
+  const greaterThanShortage = shortage > 0 && compensationSum > shortage
+  console.log({ greaterThanShortage })
   const dispatch = useAppDispatch()
 
   const totalIncome = earnings.reduce((sum, x) => sum + x.amount, 0)
@@ -67,7 +72,11 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   const forwardPaymentsCompensationsAmnt =
     forwardPayments.endAmount - forwardPayments.startAmount
   const compensations = `${stockCompensationsAmnt > 0 ? stockCompensationsAmnt : ""} ${forwardPaymentsCompensationsAmnt > 0 ? forwardPaymentsCompensationsAmnt : ""}`
-  const shortage = end_balance < 0 ? Math.abs(end_balance) : 0
+
+  const error = greaterThanShortage && (
+    <span className="error">Сумма компенсации превышает сумму недостатка</span>
+  )
+  const classError = `${greaterThanShortage && "error"}`
 
   function handleSelectCompensation(e: React.ChangeEvent<HTMLInputElement>) {
     switch (e.target.name) {
@@ -82,21 +91,18 @@ const Forecast: FunctionComponent<ForecastProps> = ({
     }
   }
 
-  function handleSubmitCompensation(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  function handleSubmitCompensation() {
+    if (!greaterThanShortage) {
+      dispatch(
+        compensationSubmitted({
+          periodId,
+          compensationAmount: {
+            stock: sumToCompensateStock,
+            fp: sumToCompensateForwardPayments,
+          },
+        }),
+      )
 
-    if (
-      sumToCompensateStock + sumToCompensateForwardPayments <=
-      Math.abs(shortage)
-    ) {
-      dispatch({
-        type: "submitCompensation",
-        periodId,
-        compensation: {
-          stock: sumToCompensateStock,
-          forwardPayments: sumToCompensateForwardPayments,
-        },
-      })
       setSumToCompensateStock(0)
       setSumToCompensateForwardPayments(0)
     }
@@ -116,7 +122,12 @@ const Forecast: FunctionComponent<ForecastProps> = ({
       <span className="shortage">Недостаток: {shortage} руб.</span>
       <div className="compensation" id="compensation">
         <span>Способ возмещения:</span>
-        <form onSubmit={handleSubmitCompensation}>
+        <form
+          onSubmit={e => {
+            e.preventDefault()
+            handleSubmitCompensation()
+          }}
+        >
           <div className="item">
             <label htmlFor="stock">НЗ: {stock.endAmount} руб.</label>
             {stock.endAmount > 0 && (
@@ -124,8 +135,10 @@ const Forecast: FunctionComponent<ForecastProps> = ({
                 type="number"
                 name="stock"
                 value={sumToCompensateStock}
+                className={`${classError}`}
                 min="0"
                 max={stock.endAmount}
+                onFocus={e => e.target.select()}
                 onChange={handleSelectCompensation}
               />
             )}
@@ -141,11 +154,20 @@ const Forecast: FunctionComponent<ForecastProps> = ({
                 min="0"
                 max={forwardPayments.endAmount}
                 value={sumToCompensateForwardPayments}
+                className={`${classError}`}
+                onFocus={e => e.target.select()}
                 onChange={handleSelectCompensation}
               />
             )}
           </div>
-          <button type="submit">Вычесть</button>
+          {error}
+          <button
+            type="submit"
+            onClick={handleSubmitCompensation}
+            disabled={!(compensationSum !== 0) || greaterThanShortage}
+          >
+            Вычесть
+          </button>
         </form>
       </div>
     </div>

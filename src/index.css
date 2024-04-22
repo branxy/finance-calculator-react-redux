@@ -46,3 +46,8 @@ button {
 button:hover {
   border-width: 2px;
 }
+
+.error {
+  color: red;
+  border-color: red;
+}
