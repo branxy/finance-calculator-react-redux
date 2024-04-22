@@ -2,21 +2,17 @@ export interface FinancePeriod {
   id: string
   user_id: string
   start_date: string
-  days_to_new_period?: number
   start_balance: number
   end_balance: number
   stock_start_amount: number
   stock_end_amount: number
   forward_payments_start_amount: number
   forward_payments_end_amount: number
-  shortage: number
-  stock_compensation: number
-  forward_payments_compensation: number
 }
 
 export type Periods = FinancePeriod[]
 
-export interface CashFlowItem {
+export interface CashflowItem {
   id: string
   period_id: FinancePeriod["id"]
   type?: "earning" | "fixed-payment" | "variable-payment"
@@ -25,8 +21,10 @@ export interface CashFlowItem {
   date: string
 }
 
+export type Cashflow = CashflowItem[]
+
 export interface CashFlowTable {
-  cashflow: CashFlowItem[]
+  cashflow: Cashflow
   status: "idle" | "loading" | "succeeded" | "failed"
   error: string | null
 }

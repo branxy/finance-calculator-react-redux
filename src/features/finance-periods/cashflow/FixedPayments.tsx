@@ -12,6 +12,7 @@ const FixedPayments: FunctionComponent<FixedPaymentsProps> = ({
   payments,
   sum,
 }) => {
+  // console.log({ payments })
   return (
     <div className="fixed">
       <h4>Обязательные платежи: {sum} руб.</h4>

@@ -9,8 +9,10 @@ export function getTodayDate() {
 
 export function getDaysBetweenTwoDates(
   lesserDate: FinancePeriod["start_date"],
-  greaterDate: FinancePeriod["start_date"] = today,
-) {
+  greaterDate?: FinancePeriod["start_date"],
+): number | undefined {
+  if (!greaterDate) return undefined
+
   const greaterPeriodTimestamp = new Date(greaterDate).getTime()
   const lesserPeriodTimestamp = new Date(lesserDate).getTime()
 
@@ -21,6 +23,5 @@ export function getDaysBetweenTwoDates(
 
   return daysBetweenPeriods
 }
-
 
 function calculatePeriodEndBalance() {}

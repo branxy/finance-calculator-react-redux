@@ -1,22 +1,29 @@
 import { createAppSlice } from "../../../app/createAppSlice"
-import type { CashFlowItem, CashFlowTable, FinancePeriod } from "../types"
+import type { CashflowItem, CashFlowTable, FinancePeriod } from "../types"
 import { v4 as uuidv4 } from "uuid"
 import { getTodayDate } from "../../../utils"
 import { PayloadAction } from "@reduxjs/toolkit"
 import { type RootState } from "../../../app/store"
-import { uploadFixedPayment } from "../api/cashflowApi"
+import { uploadPayment } from "../api/cashflowApi"
+import { createAppSelector } from "../../../app/hooks"
+import { paymentSubmitted } from "../periodsSlice"
+import {
+  type EarningsT,
+  type FixedPaymentsT,
+  type VariablePaymentsT,
+} from "./Forecast"
+
+const sampleCashflowItem = {
+  id: uuidv4(),
+  period_id: "1",
+  type: "fixed-payment",
+  title: "Аренда квартиры",
+  amount: 20000,
+  date: getTodayDate(),
+}
 
 const initialState: CashFlowTable = {
-  cashflow: [
-    {
-      id: uuidv4(),
-      period_id: "1",
-      type: "fixed-payment",
-      title: "Аренда квартиры",
-      amount: 20000,
-      date: getTodayDate(),
-    },
-  ],
+  cashflow: [],
   status: "idle",
   error: null,
 }
@@ -25,9 +32,17 @@ export const cashflowSlice = createAppSlice({
   name: "cashflow",
   initialState,
   reducers: create => ({
-    addFixedPayment: create.asyncThunk(
-      async (newPayment: CashFlowItem) => {
-        const receivedNewPayment = await uploadFixedPayment(newPayment)
+    addedPayment: create.asyncThunk(
+      async (newPayment: CashflowItem, { dispatch }) => {
+        // dispatch paymentSubmitted() to periodsSlice
+        // console.log("Received from dispatch:", { newPayment })
+        dispatch(
+          paymentSubmitted({
+            periodId: newPayment.period_id,
+            paymentAmount: newPayment.amount,
+          }),
+        )
+        const receivedNewPayment = await uploadPayment(newPayment)
         return { newPayment: receivedNewPayment }
       },
       {
@@ -39,7 +54,6 @@ export const cashflowSlice = createAppSlice({
         },
         fulfilled: (state, action) => {
           state.status = "succeeded"
-          // here a periodsSlice extraReducer should intercept the dispatch call and recalculate current period start_balance, end_balance and shortage. Then recalculate future periods' start_balance, end_balance and shortage.
 
           // add new fixed payment to state
           state.cashflow.push(action.payload.newPayment)
@@ -47,20 +61,50 @@ export const cashflowSlice = createAppSlice({
       },
     ),
   }),
-  selectors: {},
+  selectors: {
+    selectCashflow: state => state.cashflow,
+    selectAllEarnings: state =>
+      state.cashflow.filter(e => e.type === "earning") as EarningsT,
+    selectAllFixedPayments: state =>
+      state.cashflow.filter(c => c.type === "fixed-payment") as FixedPaymentsT,
+    selectAllVariablePayments: state =>
+      state.cashflow.filter(
+        c => c.type === "variable-payment",
+      ) as VariablePaymentsT,
+  },
 })
 
-export const selectCashFlow = (state: RootState) => state.cashflow.cashflow
+export const { addedPayment } = cashflowSlice.actions
+export const {
+  selectCashflow,
+  selectAllEarnings,
+  selectAllFixedPayments,
+  selectAllVariablePayments,
+} = cashflowSlice.selectors
+export default cashflowSlice.reducer
 
-export const selectCashFlowById = (
+const returnPeriodId = (
   state: RootState,
   periodId: FinancePeriod["id"],
-) => {
-  return selectCashFlow(state).filter(
-    (cashflow: CashFlowItem) => cashflow.period_id === periodId,
-  )
-}
+): FinancePeriod["id"] => periodId
 
-export const { addFixedPayment } = cashflowSlice.actions
-export const {} = cashflowSlice.selectors
-export default cashflowSlice.reducer
+export const selectCashFlowById = createAppSelector(
+  [selectCashflow, returnPeriodId],
+  (cashflow, periodId: string) =>
+    cashflow.filter(c => c.period_id === periodId),
+)
+
+export const selectEarningsByPeriodId = createAppSelector(
+  [selectAllEarnings, returnPeriodId],
+  (earnings, periodId) => earnings.filter(e => e.period_id === periodId),
+)
+
+export const selectFixedPaymentsByPeriodId = createAppSelector(
+  [selectAllFixedPayments, returnPeriodId],
+  (payments, periodId) => payments.filter(p => p.period_id === periodId),
+)
+
+export const selectVariablePaymentsByPeriodId = createAppSelector(
+  [selectAllVariablePayments, returnPeriodId],
+  (payments, periodId) => payments.filter(p => p.period_id === periodId),
+)

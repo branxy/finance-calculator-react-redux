@@ -1,11 +1,11 @@
 import { v4 as uuidv4 } from "uuid"
 import { type FunctionComponent, useState } from "react"
-import type { CashFlowItem, FinancePeriod } from "../types"
+import type { CashflowItem, FinancePeriod } from "../types"
 import { getTodayDate } from "../../../utils"
 import { useAppDispatch } from "../../../app/hooks"
 
 import "./AddTransaction.css"
-import { addFixedPayment } from "./cashflowSlice"
+import { addedPayment } from "./cashflowSlice"
 
 interface AddTransactionProps {
   periodId: FinancePeriod["id"]
@@ -21,69 +21,57 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
   end_balance,
 }) => {
   const today = getTodayDate()
-  const sampleTransaction: CashFlowItem = {
-    id: uuidv4(),
+
+  const dispatch = useAppDispatch()
+
+  const sampleTransaction: Omit<CashflowItem, "id"> = {
     period_id: periodId,
+    type: undefined,
     title: "",
     amount: 0,
     date: today,
   }
-  const dispatch = useAppDispatch()
-  const [newTransaction, setNewTransaction] =
-    useState<CashFlowItem>(sampleTransaction)
-  const [paymentType, setPaymentType] = useState("")
 
-  function handleNewTransaction(
-    transaction: CashFlowItem,
-    paymentType: string,
-  ) {
+  const [newTransaction, setNewTransaction] =
+    useState<Omit<CashflowItem, "id">>(sampleTransaction)
+
+  function handleNewTransaction(transaction: Omit<CashflowItem, "id">) {
     // 1. Determines transactionType
     // 2. If it's payment, submitPayment()
     // 3. If it's income, submitIncome()
     const newTransactionIsFilled =
-      newTransaction.title.length > 0 && newTransaction.amount
-    if (
-      transactionType === "outcome" &&
-      paymentType &&
-      newTransactionIsFilled
-    ) {
-      submitPayment(transaction, paymentType)
-    } else if (transactionType === "income") {
+      newTransaction.title.length > 0 && newTransaction.amount > 0
+    const isPayment =
+      transaction.type === "fixed-payment" ||
+      transaction.type === "variable-payment"
+    if (isPayment && newTransactionIsFilled) {
+      submitPayment(transaction)
+    } else if (transaction.type === "earning") {
       submitIncome(transaction)
     }
 
-    setNewTransaction({ ...sampleTransaction, id: uuidv4() })
+    setNewTransaction({ ...sampleTransaction, type: transaction.type })
   }
 
-  function submitPayment(payment: CashFlowItem, paymentType: string) {
+  function submitPayment(payment: Omit<CashflowItem, "id">) {
     if (typeof end_balance === "number") {
-      switch (paymentType) {
-        case "fixed":
-          // fix
-          dispatch(addFixedPayment(payment))
-          break
-        case "variable":
-          // fix
-          dispatch({
-            type: "addVariablePayment",
-            periodId,
-            newTransaction: payment,
-          })
-          break
-        default:
-          throw new Error(`Unknown type of payment: ${paymentType}`)
+      const paymentToUpload: CashflowItem = {
+        id: uuidv4(),
+        ...payment,
       }
+      dispatch(addedPayment(paymentToUpload))
     }
   }
 
-  function submitIncome(transaction: CashFlowItem) {
+  function submitIncome(transaction: Omit<CashflowItem, "id">) {
     const newEndBalance = end_balance && end_balance + transaction.amount
 
     if (typeof newEndBalance === "number") {
+      const newTransaction = { id: uuidv4(), ...transaction }
       dispatch({
         type: "addIncome",
         periodId,
-        newTransaction: transaction,
+        newTransaction,
       })
     }
   }
@@ -91,7 +79,8 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
   function handleNewPaymentChange(e: React.ChangeEvent<HTMLInputElement>) {
     setNewTransaction(prev => {
       const value = e.target.value
-      switch (e.target.name) {
+      const inputName = e.target.name as "title" | "amount" | "date"
+      switch (inputName) {
         case "title":
           return { ...prev, title: value }
           break
@@ -112,7 +101,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
       className="add-transaction"
       onSubmit={e => {
         e.preventDefault()
-        handleNewTransaction(newTransaction, paymentType)
+        handleNewTransaction(newTransaction)
       }}
     >
       {transactionType === "outcome" && (
@@ -120,12 +109,17 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
           <label htmlFor="category">Категория:</label>
           <select
             name="category"
-            onChange={e => setPaymentType(e.target.value)}
+            onChange={e =>
+              setNewTransaction(prev => {
+                const paymentType = e.target.value as CashflowItem["type"]
+                return { ...prev, type: paymentType }
+              })
+            }
             required
           >
-            <option value="">-Выбрать-</option>
-            <option value="fixed">Обязательный</option>
-            <option value="variable">Остальное</option>
+            <option value={undefined}>-Выбрать-</option>
+            <option value="fixed-payment">Обязательный</option>
+            <option value="variable-payment">Остальное</option>
           </select>
         </div>
       )}
@@ -162,9 +156,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         />
       </div>
       <div className="actions form-item">
-        <button
-          onClick={() => handleNewTransaction(newTransaction, paymentType)}
-        >
+        <button onClick={() => handleNewTransaction(newTransaction)}>
           <span className="material-symbols-outlined">add</span>
           <span>
             Добавить {transactionType === "outcome" ? "платеж" : "доход"}

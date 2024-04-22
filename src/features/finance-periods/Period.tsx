@@ -1,7 +1,11 @@
 import { useState, type FunctionComponent } from "react"
-import type { CashFlowTable, FinancePeriod } from "./types"
+import type { Cashflow, FinancePeriod } from "./types"
 import { useAppDispatch, useAppSelector } from "../../app/hooks"
-import { addPeriod, changeStartBalance, changeStartDate } from "./periodsSlice"
+import {
+  addedPeriod,
+  changedStartBalance,
+  changedStartDate,
+} from "./periodsSlice"
 import Dropdown from "../../components/Dropdown"
 import AddTransaction from "./cashflow/AddTransaction"
 import FixedPayments from "./cashflow/FixedPayments"
@@ -11,7 +15,12 @@ import Forecast, {
   type EarningsT,
   type VariablePaymentsT,
 } from "./cashflow/Forecast"
-import { selectCashFlowById } from "./cashflow/cashflowSlice"
+import {
+  selectCashFlowById,
+  selectEarningsByPeriodId,
+  selectFixedPaymentsByPeriodId,
+  selectVariablePaymentsByPeriodId,
+} from "./cashflow/cashflowSlice"
 import Earnings from "./cashflow/Earnings"
 import "./Period.css"
 
@@ -22,13 +31,10 @@ interface PeriodProps {
   start_date: FinancePeriod["start_date"]
   start_balance: FinancePeriod["start_balance"]
   end_balance: FinancePeriod["end_balance"]
-  shortage: FinancePeriod["shortage"]
   stock_end_amount: FinancePeriod["stock_end_amount"]
   forward_payments_end_amount: FinancePeriod["forward_payments_end_amount"]
-  stock_compensation: FinancePeriod["stock_compensation"]
-  forward_payments_compensation: FinancePeriod["forward_payments_compensation"]
-  days_to_new_period?: FinancePeriod["days_to_new_period"]
-  periodCashflow: CashFlowTable
+  forward_payments_start_amount: FinancePeriod["forward_payments_start_amount"]
+  daysToNewPeriod: number | undefined
 }
 
 const Period: FunctionComponent<PeriodProps> = props => {
@@ -41,30 +47,23 @@ const Period: FunctionComponent<PeriodProps> = props => {
     end_balance,
     stock_end_amount,
     forward_payments_end_amount,
-    shortage,
-    stock_compensation,
-    forward_payments_compensation,
-    days_to_new_period,
+    forward_payments_start_amount,
+    daysToNewPeriod,
   } = props
   const [isEditingStartDate, setIsEditingStartDate] = useState(false)
-  const cashFlow: CashFlowTable = useAppSelector(state =>
-    selectCashFlowById(state, id),
+  const earnings = useAppSelector(state => selectEarningsByPeriodId(state, id))
+  const fixedPayments = useAppSelector(state =>
+    selectFixedPaymentsByPeriodId(state, id),
+  )
+  const variablePayments = useAppSelector(state =>
+    selectVariablePaymentsByPeriodId(state, id),
   )
   const dispatch = useAppDispatch()
 
-  // console.log({ cashFlow })
-
-  const earnings = cashFlow.filter(c => c.type === "earning") as EarningsT
-  const fixedPayments = [
-    ...cashFlow.filter(c => c.type === "fixed-payment"),
-  ] as FixedPaymentsT
   const fixedPaymentsSum = fixedPayments.reduce((sum, x) => {
     return sum + x.amount
   }, 0)
 
-  const variablePayments = cashFlow.filter(
-    c => c.type === "variable-payment",
-  ) as VariablePaymentsT
   const variablePaymentsSum = variablePayments.reduce((sum, x) => {
     return sum + x.amount
   }, 0)
@@ -73,7 +72,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
 
   function handleAddFinancePeriod() {
     // check
-    dispatch(addPeriod({ prevPeriodId: id, user_id }))
+    dispatch(addedPeriod({ prevPeriodId: id, user_id }))
   }
 
   function handleStartBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -81,7 +80,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
       const newValue = Number(e.target.value)
       // fix
       dispatch(
-        changeStartBalance({
+        changedStartBalance({
           periodId: id,
           newStartBalance: newValue,
         }),
@@ -92,7 +91,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
   function handleStartDateChange(e: React.ChangeEvent<HTMLInputElement>) {
     // check
     dispatch(
-      changeStartDate({
+      changedStartDate({
         periodId: id,
         newStartDate: e.target.value,
       }),
@@ -125,14 +124,15 @@ const Period: FunctionComponent<PeriodProps> = props => {
             type="number"
             value={start_balance}
             min="1"
+            onFocus={e => e.target.select()}
             onChange={handleStartBalanceChange}
           />
         ) : (
           <span>{start_balance} руб.</span>
         )}
       </div>
-      {typeof days_to_new_period === "number" && days_to_new_period > 0 && (
-        <span className="days">Период: {days_to_new_period} дней</span>
+      {typeof daysToNewPeriod === "number" && daysToNewPeriod > 0 && (
+        <span className="days">Период: {daysToNewPeriod} дней</span>
       )}
       {isntFirstPeriod && (
         <div className="earnings">
@@ -170,13 +170,16 @@ const Period: FunctionComponent<PeriodProps> = props => {
         start_balance={start_balance}
         end_balance={end_balance}
         earnings={earnings}
-        stock_end_amount={stock_end_amount}
-        forward_payments_end_amount={forward_payments_end_amount}
+        stock={{
+          startAmount: stock_end_amount,
+          endAmount: stock_end_amount,
+        }}
+        forwardPayments={{
+          startAmount: forward_payments_start_amount,
+          endAmount: forward_payments_end_amount,
+        }}
         fixedPayments={fixedPaymentsSum}
         variablePayments={variablePaymentsSum}
-        shortage={shortage}
-        stock_compensation={stock_compensation}
-        forward_payments_compensation={forward_payments_compensation}
       />
       <button onClick={handleAddFinancePeriod}>
         <span className="material-symbols-outlined">add</span>
