@@ -63,24 +63,11 @@ export const cashflowSlice = createAppSlice({
   }),
   selectors: {
     selectCashflow: state => state.cashflow,
-    selectAllEarnings: state =>
-      state.cashflow.filter(e => e.type === "earning") as EarningsT,
-    selectAllFixedPayments: state =>
-      state.cashflow.filter(c => c.type === "fixed-payment") as FixedPaymentsT,
-    selectAllVariablePayments: state =>
-      state.cashflow.filter(
-        c => c.type === "variable-payment",
-      ) as VariablePaymentsT,
   },
 })
 
 export const { addedPayment } = cashflowSlice.actions
-export const {
-  selectCashflow,
-  selectAllEarnings,
-  selectAllFixedPayments,
-  selectAllVariablePayments,
-} = cashflowSlice.selectors
+export const { selectCashflow } = cashflowSlice.selectors
 export default cashflowSlice.reducer
 
 const returnPeriodId = (
@@ -95,16 +82,23 @@ export const selectCashFlowById = createAppSelector(
 )
 
 export const selectEarningsByPeriodId = createAppSelector(
-  [selectAllEarnings, returnPeriodId],
-  (earnings, periodId) => earnings.filter(e => e.period_id === periodId),
+  [selectCashflow, returnPeriodId],
+  (earnings, periodId) =>
+    earnings.filter(e => e.type === "earning" && e.period_id === periodId),
 )
 
 export const selectFixedPaymentsByPeriodId = createAppSelector(
-  [selectAllFixedPayments, returnPeriodId],
-  (payments, periodId) => payments.filter(p => p.period_id === periodId),
+  [selectCashflow, returnPeriodId],
+  (payments, periodId) =>
+    payments.filter(
+      p => p.type === "fixed-payment" && p.period_id === periodId,
+    ),
 )
 
 export const selectVariablePaymentsByPeriodId = createAppSelector(
-  [selectAllVariablePayments, returnPeriodId],
-  (payments, periodId) => payments.filter(p => p.period_id === periodId),
+  [selectCashflow, returnPeriodId],
+  (payments, periodId) =>
+    payments.filter(
+      p => p.type === "variable-payment" && p.period_id === periodId,
+    ),
 )

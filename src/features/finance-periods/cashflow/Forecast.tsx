@@ -63,8 +63,8 @@ const Forecast: FunctionComponent<ForecastProps> = ({
     useState(0)
   const compensationSum = sumToCompensateStock + sumToCompensateForwardPayments
   const shortage = end_balance < 0 ? Math.abs(end_balance) : 0
-  const greaterThanShortage = shortage > 0 && compensationSum > shortage
-  console.log({ greaterThanShortage })
+  const compensationError =
+    (shortage === 0 && compensationSum > 0) || compensationSum > shortage
   const dispatch = useAppDispatch()
 
   const totalIncome = earnings.reduce((sum, x) => sum + x.amount, 0)
@@ -73,10 +73,10 @@ const Forecast: FunctionComponent<ForecastProps> = ({
     forwardPayments.endAmount - forwardPayments.startAmount
   const compensations = `${stockCompensationsAmnt > 0 ? stockCompensationsAmnt : ""} ${forwardPaymentsCompensationsAmnt > 0 ? forwardPaymentsCompensationsAmnt : ""}`
 
-  const error = greaterThanShortage && (
+  const error = compensationError && (
     <span className="error">Сумма компенсации превышает сумму недостатка</span>
   )
-  const classError = `${greaterThanShortage && "error"}`
+  const classError = `${compensationError && "error"}`
 
   function handleSelectCompensation(e: React.ChangeEvent<HTMLInputElement>) {
     switch (e.target.name) {
@@ -92,7 +92,7 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   }
 
   function handleSubmitCompensation() {
-    if (!greaterThanShortage) {
+    if (!compensationError) {
       dispatch(
         compensationSubmitted({
           periodId,
@@ -164,9 +164,9 @@ const Forecast: FunctionComponent<ForecastProps> = ({
           <button
             type="submit"
             onClick={handleSubmitCompensation}
-            disabled={!(compensationSum !== 0) || greaterThanShortage}
+            disabled={!(compensationSum > 0) || compensationError}
           >
-            Вычесть
+            Внести компенсацию
           </button>
         </form>
       </div>
