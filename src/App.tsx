@@ -1,7 +1,7 @@
 import "./App.css"
 import { useAppSelector } from "./app/hooks"
-import Period from "./features/finance-periods/Period"
-import { selectPeriods } from "./features/finance-periods/periodsSlice"
+import Period from "./features/finance-periods/period/Period"
+import { selectPeriods } from "./features/finance-periods/period/periodsSlice"
 import { getDaysBetweenTwoDates } from "./utils"
 
 const App = () => {

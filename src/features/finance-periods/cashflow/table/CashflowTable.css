@@ -1,0 +1,82 @@
+.cashflow-table {
+  max-width: 480px;
+}
+
+.checkbox {
+  width: 48px;
+}
+
+.cashflow-table input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+table .title {
+  width: 200px;
+}
+
+table .date {
+  width: 150px;
+}
+
+table .amount {
+  width: 140px;
+}
+
+.cashflow-table .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.cashflow-table .title-edit {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding-right: 36px;
+
+  position: relative;
+}
+
+.cashflow-table button.action {
+  position: absolute;
+  top: calc((100% - 26px) / 2);
+  right: 2px;
+  border: none;
+  background-color: rgba(163, 188, 255, 0.3);
+}
+
+.cashflow-table button.action:hover {
+  border: 1px solid grey;
+}
+
+.cashflow-table .editable input {
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+@media screen and (max-width: 768px) {
+  .list {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .cashflow-table {
+    width: 100%;
+    max-width: none;
+  }
+
+  .cashflow-table .title {
+    min-width: 120px;
+  }
+
+  .cashflow-table .date {
+    min-width: 130px;
+  }
+
+  .cashflow-table .amount {
+    min-width: 128px;
+  }
+}

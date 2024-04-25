@@ -51,3 +51,47 @@ button:hover {
   color: red;
   border-color: red;
 }
+
+table {
+  table-layout: fixed;
+  border: 1px solid #1b1b1b;
+  border-collapse: collapse;
+  vertical-align: middle;
+  overflow-x: auto;
+  border: none;
+}
+
+caption {
+  text-align: left;
+  font-weight: 700;
+}
+
+th:not(:first-child),
+td:not(:first-child) {
+  padding: 4px 6px;
+  text-align: left;
+}
+
+th:first-child,
+td:first-child {
+  padding-top: 3px;
+}
+
+th {
+  line-height: 1.2;
+}
+
+tbody tr {
+  border-top: 1px solid;
+}
+
+td {
+  text-align: center;
+  position: relative;
+}
+
+@media screen and (max-width: 768px) {
+  body {
+    padding: 0 10px 20px 10px;
+  }
+}

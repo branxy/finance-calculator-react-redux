@@ -1,4 +1,5 @@
 import { type FunctionComponent, type ReactNode, useState } from "react"
+import "./Dropdown.css"
 
 interface DropdownProps {
   children: ReactNode
@@ -15,7 +16,7 @@ const Dropdown: FunctionComponent<DropdownProps> = ({
   return (
     <div className={`dropdown ${isDropdownOpen ? "open" : "closed"}`}>
       <div className="header">
-        <h3>{title}</h3>
+        <h3 onClick={() => setIsDropdownOpen(!isDropdownOpen)}>{title}</h3>
         <button
           className="toggle"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}

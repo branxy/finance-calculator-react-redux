@@ -1,28 +1,30 @@
 import { useState, type FunctionComponent } from "react"
-import type { Cashflow, FinancePeriod } from "./types"
-import { useAppDispatch, useAppSelector } from "../../app/hooks"
+import type { Cashflow, FinancePeriod } from "../types"
+import { useAppDispatch, useAppSelector } from "../../../app/hooks"
 import {
-  addedPeriod,
-  changedStartBalance,
-  changedStartDate,
+  periodAdded,
+  startBalanceChanged,
+  startDateChanged,
 } from "./periodsSlice"
-import Dropdown from "../../components/Dropdown"
-import AddTransaction from "./cashflow/AddTransaction"
-import FixedPayments from "./cashflow/FixedPayments"
-import VariablePayments from "./cashflow/VariablePayments"
+import Dropdown from "../../../components/Dropdown"
+import AddTransaction from "../cashflow/AddTransaction"
+import Payments from "../cashflow/Payments"
 import Forecast, {
   type FixedPaymentsT,
   type EarningsT,
   type VariablePaymentsT,
-} from "./cashflow/Forecast"
+  type AllPayments,
+} from "../cashflow/Forecast"
 import {
+  selectAllPaymentsByPeriodId,
   selectCashFlowById,
   selectEarningsByPeriodId,
   selectFixedPaymentsByPeriodId,
   selectVariablePaymentsByPeriodId,
-} from "./cashflow/cashflowSlice"
-import Earnings from "./cashflow/Earnings"
+} from "../cashflow/cashflowSlice"
+import Earnings from "../cashflow/Earnings"
 import "./Period.css"
+import DaysToNewPeriod from "./DaysToNewPeriod"
 
 interface PeriodProps {
   index: number
@@ -51,13 +53,19 @@ const Period: FunctionComponent<PeriodProps> = props => {
     daysToNewPeriod,
   } = props
   const [isEditingStartDate, setIsEditingStartDate] = useState(false)
-  const earnings = useAppSelector(state => selectEarningsByPeriodId(state, id))
+  const earnings = useAppSelector(state =>
+    selectEarningsByPeriodId(state, id),
+  ) as EarningsT
+  const allPayments = useAppSelector(state =>
+    selectAllPaymentsByPeriodId(state, id),
+  ) as AllPayments
+
   const fixedPayments = useAppSelector(state =>
     selectFixedPaymentsByPeriodId(state, id),
-  )
+  ) as FixedPaymentsT
   const variablePayments = useAppSelector(state =>
     selectVariablePaymentsByPeriodId(state, id),
-  )
+  ) as VariablePaymentsT
   const dispatch = useAppDispatch()
 
   const fixedPaymentsSum = fixedPayments.reduce((sum, x) => {
@@ -70,9 +78,10 @@ const Period: FunctionComponent<PeriodProps> = props => {
 
   const isntFirstPeriod = index !== 0
 
+
   function handleAddFinancePeriod() {
     // check
-    dispatch(addedPeriod({ prevPeriodId: id, user_id }))
+    dispatch(periodAdded({ prevPeriodId: id, user_id }))
   }
 
   function handleStartBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -80,7 +89,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
       const newValue = Number(e.target.value)
       // fix
       dispatch(
-        changedStartBalance({
+        startBalanceChanged({
           periodId: id,
           newStartBalance: newValue,
         }),
@@ -91,11 +100,17 @@ const Period: FunctionComponent<PeriodProps> = props => {
   function handleStartDateChange(e: React.ChangeEvent<HTMLInputElement>) {
     // check
     dispatch(
-      changedStartDate({
+      startDateChanged({
         periodId: id,
         newStartDate: e.target.value,
       }),
     )
+  }
+
+  function handleStartDateKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      setIsEditingStartDate(!isEditingStartDate)
+    }
   }
 
   function handleEditStartDate() {
@@ -104,19 +119,22 @@ const Period: FunctionComponent<PeriodProps> = props => {
 
   return (
     <div className="period">
-      {isEditingStartDate ? (
-        <input
-          type="date"
-          defaultValue={start_date}
-          onChange={handleStartDateChange}
-          onBlur={() => setIsEditingStartDate(false)}
-          autoFocus={isEditingStartDate}
-        />
-      ) : (
-        <h2 className="title" onClick={handleEditStartDate}>
-          {start_date}
-        </h2>
-      )}
+      <div className="period-title">
+        {isEditingStartDate ? (
+          <input
+            type="date"
+            defaultValue={start_date}
+            onChange={handleStartDateChange}
+            onKeyDown={handleStartDateKeyDown}
+            onBlur={() => setIsEditingStartDate(false)}
+            autoFocus={isEditingStartDate}
+          />
+        ) : (
+          <h2 className="title" onClick={handleEditStartDate}>
+            {start_date}
+          </h2>
+        )}
+      </div>
       <div className="balance">
         <span>Стартовый баланс: </span>
         {index === 0 ? (
@@ -131,9 +149,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
           <span>{start_balance} руб.</span>
         )}
       </div>
-      {typeof daysToNewPeriod === "number" && daysToNewPeriod > 0 && (
-        <span className="days">Период: {daysToNewPeriod} дней</span>
-      )}
+      <DaysToNewPeriod periodIndex={index} daysToNewPeriod={daysToNewPeriod} />
       {isntFirstPeriod && (
         <div className="earnings">
           <Dropdown title="Доходы" isOpenByDefault={true}>
@@ -147,22 +163,18 @@ const Period: FunctionComponent<PeriodProps> = props => {
       )}
       <div className="payments">
         <Dropdown title="Расходы" isOpenByDefault={true}>
-          <div className="payments-content">
-            <AddTransaction
-              periodId={id}
-              transactionType="outcome"
-              fixedPaymentsLength={fixedPayments.length}
-              variablePaymentsLength={variablePayments.length}
-              end_balance={end_balance}
-            />
-            <div className="payments-list">
-              <FixedPayments payments={fixedPayments} sum={fixedPaymentsSum} />
-              <VariablePayments
-                payments={variablePayments}
-                sum={variablePaymentsSum}
-              />
-            </div>
-          </div>
+          <AddTransaction
+            periodId={id}
+            transactionType="outcome"
+            fixedPaymentsLength={fixedPayments.length}
+            variablePaymentsLength={variablePayments.length}
+            end_balance={end_balance}
+          />
+          <Payments
+            payments={allPayments}
+            fixedPaymentsSum={fixedPaymentsSum}
+            variablePaymentsSum={variablePaymentsSum}
+          />
         </Dropdown>
       </div>
       <Forecast

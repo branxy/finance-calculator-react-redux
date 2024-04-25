@@ -17,10 +17,9 @@ export function getDaysBetweenTwoDates(
   const lesserPeriodTimestamp = new Date(lesserDate).getTime()
 
   const daysBetweenPeriods = Math.floor(
-    Math.abs(greaterPeriodTimestamp - lesserPeriodTimestamp) /
-      (1000 * 60 * 60 * 24),
+    (greaterPeriodTimestamp - lesserPeriodTimestamp) / (1000 * 60 * 60 * 24),
   )
-
+  console.log({ daysBetweenPeriods })
   return daysBetweenPeriods
 }
 

@@ -1,6 +1,6 @@
 import type { Action, ThunkAction } from "@reduxjs/toolkit"
 import { combineSlices, configureStore } from "@reduxjs/toolkit"
-import { periodsSlice } from "../features/finance-periods/periodsSlice"
+import { periodsSlice } from "../features/finance-periods/period/periodsSlice"
 import { cashflowSlice } from "../features/finance-periods/cashflow/cashflowSlice"
 
 // `combineSlices` automatically combines the reducers using

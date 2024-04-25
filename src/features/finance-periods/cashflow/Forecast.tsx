@@ -2,12 +2,21 @@ import { useState, type FunctionComponent } from "react"
 import type { CashflowItem, FinancePeriod } from "../types"
 import { useAppDispatch } from "../../../app/hooks"
 import "./Forecast.css"
-import { compensationSubmitted } from "../periodsSlice"
+import { compensationSubmitted } from "../period/periodsSlice"
 
 export type EarningsT = {
   id: CashflowItem["id"]
   period_id: CashflowItem["period_id"]
   type: "earning"
+  title: CashflowItem["title"]
+  amount: CashflowItem["amount"]
+  date: CashflowItem["date"]
+}[]
+
+export type AllPayments = {
+  id: CashflowItem["id"]
+  period_id: CashflowItem["period_id"]
+  type: "fixed-payment" | "variable-payment"
   title: CashflowItem["title"]
   amount: CashflowItem["amount"]
   date: CashflowItem["date"]

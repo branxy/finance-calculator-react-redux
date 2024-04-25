@@ -5,7 +5,7 @@ import { getTodayDate } from "../../../utils"
 import { useAppDispatch } from "../../../app/hooks"
 
 import "./AddTransaction.css"
-import { addedPayment } from "./cashflowSlice"
+import { incomeAdded, paymentAdded } from "./cashflowSlice"
 
 interface AddTransactionProps {
   periodId: FinancePeriod["id"]
@@ -46,7 +46,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
       transaction.type === "variable-payment"
     if (isPayment && newTransactionIsFilled) {
       submitPayment(transaction)
-    } else if (transaction.type === "earning") {
+    } else if (transactionType === "income") {
       submitIncome(transaction)
     }
 
@@ -59,21 +59,18 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         id: uuidv4(),
         ...payment,
       }
-      dispatch(addedPayment(paymentToUpload))
+      dispatch(paymentAdded(paymentToUpload))
     }
   }
 
   function submitIncome(transaction: Omit<CashflowItem, "id">) {
-    const newEndBalance = end_balance && end_balance + transaction.amount
-
-    if (typeof newEndBalance === "number") {
-      const newTransaction = { id: uuidv4(), ...transaction }
-      dispatch({
-        type: "addIncome",
-        periodId,
-        newTransaction,
-      })
-    }
+    const newTransaction = {
+      ...transaction,
+      id: uuidv4(),
+      type: "earning",
+    } as CashflowItem
+    // fix—add reducer to cashflowSlice
+    dispatch(incomeAdded(newTransaction))
   }
 
   function handleNewPaymentChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -128,9 +125,10 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         <input
           type="text"
           name="title"
-          value={newTransaction.title}
           required
-          size={18}
+          size={16}
+          value={newTransaction.title}
+          onFocus={e => e.target.select()}
           onChange={handleNewPaymentChange}
         />
       </div>
@@ -139,9 +137,10 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         <input
           type="number"
           name="amount"
-          value={newTransaction.amount}
           required
           min="1"
+          value={newTransaction.amount}
+          onFocus={e => e.target.select()}
           onChange={handleNewPaymentChange}
         />
       </div>

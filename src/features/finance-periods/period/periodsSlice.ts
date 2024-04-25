@@ -1,15 +1,16 @@
-import { getDaysBetweenTwoDates, getTodayDate } from "../../utils"
-import type { Periods, FinancePeriod, CashflowItem } from "./types"
+import { getDaysBetweenTwoDates, getTodayDate } from "../../../utils"
+import type { Periods, FinancePeriod, CashflowItem } from "../types"
 import { v4 as uuidv4 } from "uuid"
-import { createAppSlice } from "../../app/createAppSlice"
-import { type PayloadAction } from "@reduxjs/toolkit"
+import { createAppSlice } from "../../../app/createAppSlice"
+import { createSelector, type PayloadAction } from "@reduxjs/toolkit"
 import {
   uploadPeriod,
   updateStartDate,
   updatePeriodsBalance,
   updateCompensation,
-} from "./api/periodsApi"
-import { type RootState } from "../../app/store"
+} from "../api/periodsApi"
+import { type RootState } from "../../../app/store"
+import { createAppSelector } from "../../../app/hooks"
 
 const initialState: InitialState = {
   periods: [
@@ -17,8 +18,8 @@ const initialState: InitialState = {
       id: "1",
       user_id: uuidv4(),
       start_date: getTodayDate(),
-      start_balance: 26000,
-      end_balance: 26000,
+      start_balance: 0,
+      end_balance: 0,
       stock_start_amount: 6000,
       stock_end_amount: 6000,
       forward_payments_start_amount: 12000,
@@ -86,7 +87,7 @@ export const periodsSlice = createAppSlice({
   initialState,
   reducers: create => ({
     // done
-    addedPeriod: create.asyncThunk(
+    periodAdded: create.asyncThunk(
       async ({ prevPeriodId, user_id }: addPeriodProps, { getState }) => {
         const state = getState() as RootState
 
@@ -130,7 +131,7 @@ export const periodsSlice = createAppSlice({
       },
     ),
     // done
-    changedStartDate: create.asyncThunk(
+    startDateChanged: create.asyncThunk(
       async (
         { periodId, newStartDate }: ChangeStartDateProps,
         { getState },
@@ -177,7 +178,7 @@ export const periodsSlice = createAppSlice({
       },
     ),
     // rewriting to asyncThunk
-    changedStartBalance: create.asyncThunk(
+    startBalanceChanged: create.asyncThunk(
       async (
         {
           periodId,
@@ -231,8 +232,7 @@ export const periodsSlice = createAppSlice({
           }
 
           // periodId will be needed, when you use db
-          const periodsToUpdate: ValuesToUpdate =
-            await updatePeriodsBalance(valuesToUpdate)
+          const periodsToUpdate = await updatePeriodsBalance(valuesToUpdate)
 
           return { periodsToUpdate }
         } else {
@@ -272,7 +272,95 @@ export const periodsSlice = createAppSlice({
         },
       },
     ),
-    paymentSubmitted: create.asyncThunk(
+    endBalanceChanged: create.asyncThunk(
+      async (
+        {
+          periodId,
+          whatChanged,
+          difference,
+        }: {
+          periodId: CashflowItem["period_id"]
+          whatChanged: "income" | "payment"
+          difference: number
+        },
+        { getState },
+      ) => {
+        // just add the difference to current balance
+
+        const {
+          periods: { periods },
+        } = getState() as RootState
+
+        const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
+        const currentPeriod = periods[currentPeriodIndex]
+
+        if (currentPeriod) {
+          const valuesToUpdate: ValuesToUpdate = []
+
+          for (let i = currentPeriodIndex; i < periods.length; i++) {
+            const p = periods[i]
+            const isPayment = whatChanged === "payment"
+            let newStartBalanceForPeriod, newEndBalanceForPeriod
+
+            // if difference < 0, it means that newValue is lesser than current and you need to add the negative difference
+            // if difference > 0, it means that newValue is greater than current and you need to substract the negative difference
+            if (p.id === periodId) {
+              newStartBalanceForPeriod = p.start_balance
+              newEndBalanceForPeriod = isPayment
+                ? p.end_balance - difference
+                : p.end_balance + difference
+            } else {
+              newStartBalanceForPeriod = isPayment
+                ? p.start_balance - difference
+                : p.start_balance + difference
+              newEndBalanceForPeriod = isPayment
+                ? p.end_balance - difference
+                : p.end_balance + difference
+            }
+
+            valuesToUpdate.push({
+              periodId: p.id,
+              periodIndex: i,
+              newStartBalance: newStartBalanceForPeriod,
+              newEndBalance: newEndBalanceForPeriod,
+            })
+          }
+
+          const newValues = await updatePeriodsBalance(valuesToUpdate)
+
+          return { newValues }
+        } else {
+          throw new Error(`Period with id ${periodId} not found`)
+        }
+      },
+      {
+        pending: state => {
+          state.status = "loading"
+        },
+        rejected: (state, action) => {
+          state.status = "failed"
+        },
+        fulfilled: (state, action) => {
+          state.status = "succeeded"
+
+          const { periods } = state
+          const { newValues } = action.payload
+          const currentPeriodIndex = newValues[0].periodIndex
+          const map = new Map(newValues.map(p => [p.periodId, p]))
+
+          for (let i = currentPeriodIndex; i < periods.length; i++) {
+            const p = periods[i]
+            const newValue = map.get(p.id)
+
+            if (newValue) {
+              p.start_balance = newValue.newStartBalance
+              p.end_balance = newValue.newEndBalance
+            }
+          }
+        },
+      },
+    ),
+    paymentAddedFromCashflow: create.asyncThunk(
       async (
         {
           periodId,
@@ -353,6 +441,88 @@ export const periodsSlice = createAppSlice({
           })
 
           state.periods = updatedPeriods
+        },
+      },
+    ),
+    incomeAddedFromCashflow: create.asyncThunk(
+      async (
+        {
+          periodId,
+          incomeAmount,
+        }: {
+          periodId: FinancePeriod["id"]
+          incomeAmount: CashflowItem["amount"]
+        },
+        { getState },
+      ) => {
+        // this reducer is called inside the cashflowSlice's addIncome() reducer, when income is added
+        const {
+          periods: { periods },
+        } = getState() as RootState
+        const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
+        const currentPeriod = periods[currentPeriodIndex]
+
+        if (currentPeriod) {
+          const valuesToUpdate: ValuesToUpdate = []
+
+          for (let i = currentPeriodIndex; i < periods.length; i++) {
+            const p = periods[i]
+            let newStartBalanceForPeriod
+            let newEndBalanceForPeriod
+
+            if (p.id === currentPeriod.id) {
+              newStartBalanceForPeriod = p.start_balance
+              newEndBalanceForPeriod = p.end_balance + incomeAmount
+            } else {
+              newStartBalanceForPeriod = p.start_balance + incomeAmount
+              newEndBalanceForPeriod = p.end_balance + incomeAmount
+            }
+
+            valuesToUpdate.push({
+              periodId: p.id,
+              periodIndex: i,
+              newStartBalance: newStartBalanceForPeriod,
+              newEndBalance: newEndBalanceForPeriod,
+            })
+          }
+
+          const periodsToUpdate: ValuesToUpdate =
+            await updatePeriodsBalance(valuesToUpdate)
+
+          return { newPeriods: periodsToUpdate }
+        } else {
+          throw new Error(`Period with id ${periodId} not found`)
+        }
+      },
+      {
+        pending: state => {
+          state.status = "loading"
+        },
+        rejected: (state, action) => {
+          state.status = "failed"
+        },
+        fulfilled: (state, action) => {
+          state.status = "succeeded"
+
+          const { periods } = state
+          const { newPeriods } = action.payload
+          const currentIndex = periods.findIndex(
+            p => p.id === newPeriods[0].periodId,
+          )
+
+          const newPeriodsMap = new Map(newPeriods.map(p => [p.periodId, p]))
+
+          for (let i = currentIndex; i < periods.length; i++) {
+            const p = periods[i]
+            const newValue = newPeriodsMap.get(p.id)
+
+            if (newValue) {
+              const { newStartBalance, newEndBalance } = newValue
+
+              p.start_balance = newStartBalance
+              p.end_balance = newEndBalance
+            }
+          }
         },
       },
     ),
@@ -505,11 +675,20 @@ export const periodsSlice = createAppSlice({
 })
 
 export const {
-  addedPeriod,
-  changedStartDate,
-  changedStartBalance,
-  paymentSubmitted,
+  periodAdded,
+  startDateChanged,
+  startBalanceChanged,
+  endBalanceChanged,
+  paymentAddedFromCashflow,
+  incomeAddedFromCashflow,
   compensationSubmitted,
 } = periodsSlice.actions
 export const { selectPeriods } = periodsSlice.selectors
 export default periodsSlice.reducer
+
+const getIndex = (state: RootState, index: number): number => index
+
+export const selectPeriodStartDateByIndex = createAppSelector(
+  [selectPeriods, getIndex],
+  (state, index) => state[index]?.start_date,
+)

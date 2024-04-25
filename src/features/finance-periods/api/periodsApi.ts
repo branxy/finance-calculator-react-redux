@@ -1,5 +1,8 @@
 import { getTodayDate } from "../../../utils"
-import { PaymentSubmittedUpdates, type ValuesToUpdate } from "../periodsSlice"
+import {
+  type PaymentSubmittedUpdates,
+  type ValuesToUpdate,
+} from "../period/periodsSlice"
 import type { FinancePeriod, Periods } from "../types"
 import { v4 as uuidv4 } from "uuid"
 
