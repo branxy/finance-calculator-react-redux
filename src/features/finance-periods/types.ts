@@ -15,7 +15,12 @@ export type Periods = FinancePeriod[]
 export interface CashflowItem {
   id: string
   period_id: FinancePeriod["id"]
-  type?: "earning" | "fixed-payment" | "variable-payment"
+  type?:
+    | "earning"
+    | "fixed-payment"
+    | "variable-payment"
+    | "add-stock"
+    | "add-forward-payment"
   title: string
   amount: number
   date: string

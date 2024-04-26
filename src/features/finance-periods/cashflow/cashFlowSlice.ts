@@ -67,12 +67,21 @@ export const cashflowSlice = createAppSlice({
     incomeAdded: create.asyncThunk(
       async (newIncome: CashflowItem, { dispatch }) => {
         // 1. Pass the income amount to periods reducer
-        dispatch(
-          incomeAddedFromCashflow({
-            periodId: newIncome.period_id,
-            incomeAmount: newIncome.amount,
-          }),
-        )
+
+        switch (newIncome.type) {
+          case "earning":
+            dispatch(
+              incomeAddedFromCashflow({
+                periodId: newIncome.period_id,
+                incomeAmount: newIncome.amount,
+              }),
+            )
+            break
+          case "":
+            break
+          default:
+            break
+        }
 
         const receivedObject = await uploadTransaction(newIncome)
 

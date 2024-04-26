@@ -6,8 +6,9 @@ import { useAppDispatch } from "../../../app/hooks"
 
 import "./AddTransaction.css"
 import { incomeAdded, paymentAdded } from "./cashflowSlice"
+import SelectTransactionCategory from "./SelectTransactionCategory"
 
-interface AddTransactionProps {
+export interface AddTransactionProps {
   periodId: FinancePeriod["id"]
   transactionType: "income" | "outcome"
   fixedPaymentsLength?: number
@@ -36,6 +37,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
     useState<Omit<CashflowItem, "id">>(sampleTransaction)
 
   function handleNewTransaction(transaction: Omit<CashflowItem, "id">) {
+    console.log({ transaction })
     // 1. Determines transactionType
     // 2. If it's payment, submitPayment()
     // 3. If it's income, submitIncome()
@@ -46,9 +48,12 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
       transaction.type === "variable-payment"
     if (isPayment && newTransactionIsFilled) {
       submitPayment(transaction)
-    } else if (transactionType === "income") {
+    } else if (transaction.type === "earning" && newTransactionIsFilled) {
       submitIncome(transaction)
-    }
+    } else
+      throw new Error(
+        `Unknown transaction.type: "${transaction.type}", at handleNewTransaction()`,
+      )
 
     setNewTransaction({ ...sampleTransaction, type: transaction.type })
   }
@@ -69,8 +74,14 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
       id: uuidv4(),
       type: "earning",
     } as CashflowItem
-    // fix—add reducer to cashflowSlice
     dispatch(incomeAdded(newTransaction))
+  }
+
+  function addSavings(transaction: Omit<CashflowItem, "id">) {
+    const newSavings: CashflowItem = {
+      id: uuidv4(),
+      ...transaction,
+    }
   }
 
   function handleNewPaymentChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -101,25 +112,10 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         handleNewTransaction(newTransaction)
       }}
     >
-      {transactionType === "outcome" && (
-        <div className="category form-item">
-          <label htmlFor="category">Категория:</label>
-          <select
-            name="category"
-            onChange={e =>
-              setNewTransaction(prev => {
-                const paymentType = e.target.value as CashflowItem["type"]
-                return { ...prev, type: paymentType }
-              })
-            }
-            required
-          >
-            <option value={undefined}>-Выбрать-</option>
-            <option value="fixed-payment">Обязательный</option>
-            <option value="variable-payment">Остальное</option>
-          </select>
-        </div>
-      )}
+      <SelectTransactionCategory
+        transactionType={transactionType}
+        setNewTransaction={setNewTransaction}
+      />
       <div className="title form-item">
         <label htmlFor="title">Название: </label>
         <input
@@ -139,7 +135,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
           name="amount"
           required
           min="1"
-          value={newTransaction.amount}
+          value={newTransaction.amount || ""}
           onFocus={e => e.target.select()}
           onChange={handleNewPaymentChange}
         />

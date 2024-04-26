@@ -2,7 +2,7 @@ import { getDaysBetweenTwoDates, getTodayDate } from "../../../utils"
 import type { Periods, FinancePeriod, CashflowItem } from "../types"
 import { v4 as uuidv4 } from "uuid"
 import { createAppSlice } from "../../../app/createAppSlice"
-import { createSelector, type PayloadAction } from "@reduxjs/toolkit"
+import { type PayloadAction } from "@reduxjs/toolkit"
 import {
   uploadPeriod,
   updateStartDate,
@@ -63,6 +63,15 @@ interface ValueToUpdate {
 }
 
 export type ValuesToUpdate = ValueToUpdate[]
+
+interface CompensationToUpdate {
+  periodId: FinancePeriod["id"]
+  periodIndex: number
+  savingType: "add-stock" | "add-forward-payment"
+  amount: CashflowItem["amount"]
+}
+
+type CompensationsToUpdate = CompensationToUpdate[]
 
 interface CompensationAmount {
   stock: number
@@ -523,6 +532,69 @@ export const periodsSlice = createAppSlice({
               p.end_balance = newEndBalance
             }
           }
+        },
+      },
+    ),
+    savingsAddedFromCashflow: create.asyncThunk(
+      async (
+        {
+          periodId,
+          savingAmount,
+        }: {
+          periodId: FinancePeriod["id"]
+          savingType: "add-stock" | "add-forward-payment"
+          savingAmount: CashflowItem["amount"]
+        },
+        { getState },
+      ) => {
+        const {
+          periods: { periods },
+        } = getState() as RootState
+
+        const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
+        const currentPeriod = periods[currentPeriodIndex]
+
+        if (currentPeriod) {
+          const valuesToUpdate: CompensationsToUpdate = []
+
+          for (let i = currentPeriodIndex; i < periods.length; i++) {
+            const p = periods[i]
+            let newStartBalanceForPeriod
+            let newEndBalanceForPeriod
+          }
+        } else {
+          throw new Error(`Period with id ${periodId} not found`)
+        }
+      },
+      {
+        pending: state => {
+          state.status = "loading"
+        },
+        rejected: (state, action) => {
+          state.status = "failed"
+        },
+        fulfilled: (state, action) => {
+          state.status = "succeeded"
+
+          const { periods } = state
+          //   const { newPeriods } = action.payload
+          //   const currentIndex = periods.findIndex(
+          //     p => p.id === newPeriods[0].periodId,
+          //   )
+
+          //   const newPeriodsMap = new Map(newPeriods.map(p => [p.periodId, p]))
+
+          //   for (let i = currentIndex; i < periods.length; i++) {
+          //     const p = periods[i]
+          //     const newValue = newPeriodsMap.get(p.id)
+
+          //     if (newValue) {
+          //       const { newStartBalance, newEndBalance } = newValue
+
+          //       p.start_balance = newStartBalance
+          //       p.end_balance = newEndBalance
+          //     }
+          //   }
         },
       },
     ),

@@ -12,7 +12,7 @@ const CashflowTable: FunctionComponent<CashflowTableProps> = ({
   cashflowType,
   tableItems,
 }) => {
-  // fix
+  // implement select functionality
   const isCheckedCheckbox = false
 
   function handleSelectAll() {}
