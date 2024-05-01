@@ -3,14 +3,17 @@ import CashflowTableRow from "./CashflowTableRow"
 import "./CashflowTable.css"
 import { type AllTransactionsProps } from "../AllTransactions"
 import type { Cashflow, CashflowItem, FinancePeriod } from "../../types"
+import CashflowTableActionButtons from "./CashflowTableActionButtons"
 
 export interface CashflowTableProps {
+  periodId: FinancePeriod["id"]
   tableItems: Cashflow
   fixedPaymentsSum: AllTransactionsProps["fixedPaymentsSum"]
   variablePaymentsSum: AllTransactionsProps["fixedPaymentsSum"]
 }
 
 const CashflowTable: FunctionComponent<CashflowTableProps> = ({
+  periodId,
   tableItems,
   fixedPaymentsSum,
   variablePaymentsSum,
@@ -66,6 +69,11 @@ const CashflowTable: FunctionComponent<CashflowTableProps> = ({
       {variablePaymentsSum > 0 && (
         <p>Остальные платежи: {variablePaymentsSum} руб.</p>
       )}
+      <CashflowTableActionButtons
+        periodId={periodId}
+        selectedTransactions={selectedTransactions}
+        setSelectedTransactions={setSelectedTransactions}
+      />
       <table className="cashflow-table">
         <colgroup>
           <col className="checkbox" />

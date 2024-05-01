@@ -1,5 +1,5 @@
 .cashflow-table {
-  max-width: 480px;
+  width: fit-content;
 }
 
 .cashflow-table .selected {
@@ -16,7 +16,7 @@
 }
 
 table .title {
-  width: 200px;
+  min-width: 200px;
 }
 
 table .date {
@@ -36,7 +36,7 @@ table .amount {
   justify-content: flex-start;
   align-items: center;
   gap: 6px;
-  height: 32px;
+  height: min-32px;
   padding-right: 36px;
 
   position: relative;

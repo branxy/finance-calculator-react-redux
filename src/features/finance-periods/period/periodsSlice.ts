@@ -1,5 +1,5 @@
 import { getDaysBetweenTwoDates, getTodayDate } from "../../../utils"
-import type { Periods, FinancePeriod, CashflowItem } from "../types"
+import type { Periods, FinancePeriod, CashflowItem, Cashflow } from "../types"
 import { v4 as uuidv4 } from "uuid"
 import { createAppSlice } from "../../../app/createAppSlice"
 import { type PayloadAction } from "@reduxjs/toolkit"
@@ -9,6 +9,7 @@ import {
   updatePeriodsBalance,
   updateCompensation,
   uploadNewSavings,
+  updateDeletedCashflow,
 } from "../api/periodsApi"
 import { type RootState } from "../../../app/store"
 import { createAppSelector } from "../../../app/hooks"
@@ -89,11 +90,21 @@ interface PaymentSubmittedSingle {
 
 export type PaymentSubmittedUpdates = PaymentSubmittedSingle[]
 
+export interface DeletedTransactionUpdate {
+  periodId: FinancePeriod["id"]
+  periodIndex: number
+  newStartBalance: FinancePeriod["start_balance"]
+  newEndBalance: FinancePeriod["end_balance"]
+  newStockStart: FinancePeriod["stock"]
+  newFPStart: FinancePeriod["forward_payments"]
+}
+
+export type DeletedTransactionsUpdate = DeletedTransactionUpdate[]
+
 export const periodsSlice = createAppSlice({
   name: "periods",
   initialState,
   reducers: create => ({
-    // done
     periodAdded: create.asyncThunk(
       async ({ prevPeriodId, user_id }: addPeriodProps, { getState }) => {
         const state = getState() as RootState
@@ -134,7 +145,6 @@ export const periodsSlice = createAppSlice({
         },
       },
     ),
-    // done
     startDateChanged: create.asyncThunk(
       async (
         { periodId, newStartDate }: ChangeStartDateProps,
@@ -181,7 +191,6 @@ export const periodsSlice = createAppSlice({
         },
       },
     ),
-    // rewriting to asyncThunk
     startBalanceChanged: create.asyncThunk(
       async (
         {
@@ -210,10 +219,6 @@ export const periodsSlice = createAppSlice({
             let newEndBalanceForPeriod
             let difference
 
-            // here I need to establish the difference between a previous start_balance and newStartBalance
-            // start_balance >=0
-            // newStartBalance >=0
-            //       1000                             600
             if (newStartBalance >= currentPeriod.start_balance) {
               // if the new start balance is greater or equal than current, just add the difference to every period
               difference = newStartBalance - currentPeriod.start_balance
@@ -554,7 +559,6 @@ export const periodsSlice = createAppSlice({
           const valuesToUpdate: CompensationsToUpdate = []
 
           for (let i = currentPeriodIndex; i < periods.length; i++) {
-            // finish updating stock | forward-payment | both. This is coming from <AddTransaction /> as income
             const p = periods[i]
             let newStockStartAmount = p.stock
             let newFPStartAmount = p.forward_payments
@@ -624,15 +628,6 @@ export const periodsSlice = createAppSlice({
         },
         { getState },
       ) => {
-        // a compensation is submitted to cover low end_balance. What to update:
-        // 1. Current period:
-        // end_balance
-        // stock OR FP OR both
-        // 2. Future periods:
-        // start_balance
-        // end_balance
-        // stock OR FP OR both
-
         const {
           periods: { periods },
         } = getState() as RootState
@@ -720,9 +715,99 @@ export const periodsSlice = createAppSlice({
         },
       },
     ),
-    deletedPeriod: create.asyncThunk(
-      (periodId: FinancePeriod["id"]) => {
-        // await supabase request
+    cashflowDeletedFromCashflow: create.asyncThunk(
+      async (
+        {
+          periodId,
+          deletedTransactionsIds,
+        }: {
+          periodId: FinancePeriod["id"]
+          deletedTransactionsIds: CashflowItem["id"][]
+        },
+        { getState },
+      ) => {
+        const {
+          periods: { periods },
+          cashflow: { cashflow },
+        } = getState() as RootState
+
+        const deletedTransactions = cashflow.filter(c =>
+          deletedTransactionsIds.includes(c.id),
+        )
+        // First, sum all transactions by type
+        const sumOfTransactions = {
+          income: 0,
+          spend: 0,
+          stock: 0,
+          forwardPayments: 0,
+        }
+
+        for (let i = 0; i < deletedTransactions.length; i++) {
+          const transaction = deletedTransactions[i]
+          const { amount } = transaction
+
+          switch (transaction.type) {
+            case "income/profit":
+              sumOfTransactions.income += amount
+              break
+            case "income/stock":
+              sumOfTransactions.stock += amount
+              break
+            case "income/forward-payment":
+              sumOfTransactions.forwardPayments += amount
+              break
+            case "payment/fixed":
+            case "payment/variable":
+              sumOfTransactions.spend += amount
+              break
+            case "compensation/stock":
+              sumOfTransactions.stock -= amount
+              break
+            case "compensation/forward-payment":
+              sumOfTransactions.forwardPayments -= amount
+              break
+            default:
+              throw new Error(`Unknown transaction type: ${transaction.type}`)
+          }
+        }
+        const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
+        const currentPeriod = periods[currentPeriodIndex]
+
+        if (currentPeriod) {
+          const valuesToUpdate: DeletedTransactionsUpdate = []
+
+          for (let i = currentPeriodIndex; i < periods.length; i++) {
+            const p = periods[i]
+            const { income, spend, stock, forwardPayments } = sumOfTransactions
+            const interimBalance = -income + spend
+            let newStartBalanceForPeriod,
+              newEndBalanceForPeriod = p.end_balance + interimBalance,
+              newStock = p.stock + stock,
+              newFP = p.forward_payments + forwardPayments
+
+            if (p.id === currentPeriod.id) {
+              newStartBalanceForPeriod = p.start_balance
+            } else {
+              newStartBalanceForPeriod = p.start_balance + interimBalance
+            }
+
+            valuesToUpdate.push({
+              periodId: p.id,
+              periodIndex: i,
+              newStartBalance: newStartBalanceForPeriod,
+              newEndBalance: newEndBalanceForPeriod,
+              newStockStart: newStock,
+              newFPStart: newFP,
+            })
+          }
+
+          // periodId will be needed, when you use db
+          const periodsToUpdate = await updateDeletedCashflow(valuesToUpdate)
+
+          return { periodsToUpdate }
+        } else {
+          throw new Error(`Period with id ${periodId} not found`)
+        }
       },
       {
         pending: state => {
@@ -733,11 +818,50 @@ export const periodsSlice = createAppSlice({
         },
         fulfilled: (state, action) => {
           state.status = "succeeded"
-          // fix to delete
-          // state.periods.push(action.payload)
+
+          const { periods } = state
+          const { periodsToUpdate } = action.payload
+
+          const currentIndex = periods.findIndex(
+            p => p.id === periodsToUpdate[0].periodId,
+          )
+
+          const periodsToUpdateMap = new Map(
+            periodsToUpdate.map(p => [p.periodId, p]),
+          )
+
+          for (let i = currentIndex; i < periods.length; i++) {
+            const p = periods[i]
+            const newValue = periodsToUpdateMap.get(p.id)
+
+            if (newValue) {
+              const {
+                newStartBalance,
+                newEndBalance,
+                newStockStart,
+                newFPStart,
+              } = newValue
+
+              p.start_balance = newStartBalance
+              p.end_balance = newEndBalance
+              p.stock = newStockStart
+              p.forward_payments = newFPStart
+            }
+          }
         },
       },
     ),
+    deletedPeriod: create.asyncThunk((periodId: FinancePeriod["id"]) => {}, {
+      pending: state => {
+        state.status = "loading"
+      },
+      rejected: (state, action) => {
+        state.status = "failed"
+      },
+      fulfilled: (state, action) => {
+        state.status = "succeeded"
+      },
+    }),
   }),
   extraReducers: builder => {},
   selectors: {
@@ -754,6 +878,7 @@ export const {
   incomeAddedFromCashflow,
   savingsAddedFromCashflow,
   compensationSubmittedFromCashflow,
+  cashflowDeletedFromCashflow,
 } = periodsSlice.actions
 export const { selectPeriods } = periodsSlice.selectors
 export default periodsSlice.reducer

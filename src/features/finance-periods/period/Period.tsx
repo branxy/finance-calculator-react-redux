@@ -29,13 +29,6 @@ import AllTransactions from "../cashflow/AllTransactions"
 
 interface PeriodProps {
   index: number
-  // id: FinancePeriod["id"]
-  // user_id: FinancePeriod["user_id"]
-  // start_date: FinancePeriod["start_date"]
-  // start_balance: FinancePeriod["start_balance"]
-  // end_balance: FinancePeriod["end_balance"]
-  // stock: FinancePeriod["stock"]
-  // forward_payments: FinancePeriod["forward_payments"]
   daysToNewPeriod: number | undefined
 }
 
@@ -76,14 +69,12 @@ const Period: FunctionComponent<PeriodProps> = props => {
   }, 0)
 
   function handleAddFinancePeriod() {
-    // check
     dispatch(periodAdded({ prevPeriodId: id, user_id }))
   }
 
   function handleStartBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (typeof Number(e.target.value) === "number") {
       const newValue = Number(e.target.value)
-      // fix
       dispatch(
         startBalanceChanged({
           periodId: id,
@@ -94,7 +85,6 @@ const Period: FunctionComponent<PeriodProps> = props => {
   }
 
   function handleStartDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    // check
     dispatch(
       startDateChanged({
         periodId: id,

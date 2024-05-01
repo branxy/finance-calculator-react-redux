@@ -43,7 +43,11 @@ button {
   width: max-content;
 }
 
-button:hover {
+button:disabled {
+  cursor: not-allowed;
+}
+
+button:not(:disabled):hover {
   border-width: 2px;
 }
 

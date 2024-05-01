@@ -27,6 +27,12 @@ export async function uploadCompensations(
   return new Promise(resolve => resolve(newCompensations))
 }
 
+export async function deleteCashflowItems(
+  casfhlowItemsIds: CashflowItem["id"][],
+): Promise<CashflowItem["id"][]> {
+  return new Promise(resolve => resolve(casfhlowItemsIds))
+}
+
 export function generateTestCashflow(
   numberOfItems = 3,
   titles: string[],

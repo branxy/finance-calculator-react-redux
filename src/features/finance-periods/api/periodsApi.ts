@@ -1,6 +1,7 @@
 import { getTodayDate } from "../../../utils"
 import {
-  CompensationsToUpdate,
+  type CompensationsToUpdate,
+  type DeletedTransactionsUpdate,
   type PaymentSubmittedUpdates,
   type ValuesToUpdate,
 } from "../period/periodsSlice"
@@ -50,5 +51,11 @@ export async function updateCompensation(
 export async function uploadNewSavings(
   valuesToUpdate: CompensationsToUpdate,
 ): Promise<CompensationsToUpdate> {
+  return new Promise(resolve => resolve(valuesToUpdate))
+}
+
+export async function updateDeletedCashflow(
+  valuesToUpdate: DeletedTransactionsUpdate,
+): Promise<DeletedTransactionsUpdate> {
   return new Promise(resolve => resolve(valuesToUpdate))
 }

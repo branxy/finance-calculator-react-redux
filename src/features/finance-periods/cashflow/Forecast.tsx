@@ -110,9 +110,6 @@ const Forecast: FunctionComponent<ForecastProps> = ({
     startAmount: FinancePeriod["stock"] | FinancePeriod["forward_payments"],
     compensations: StockCompensations | FPCompensations,
   ): [number, number] {
-    // sum = compensations.reduce()
-    // endAmount = startAmount - sum
-
     const sumOfCompensations = compensations.reduce(
       (sum, x) => sum + x.amount,
       0,
@@ -137,8 +134,6 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   }
 
   function handleSubmitCompensation() {
-    // if I want to store compensations in CashflowTable, they need to have a data structure of CashflowItem
-
     if (!compensationError) {
       dispatch(
         compensationSubmitted({

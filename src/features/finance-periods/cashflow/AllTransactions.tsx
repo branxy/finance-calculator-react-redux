@@ -37,6 +37,7 @@ const AllTransactions: FunctionComponent<AllTransactionsProps> = ({
 
   const cashflowTable = allPeriodCashflow.length > 0 && (
     <CashflowTable
+      periodId={periodId}
       tableItems={allPeriodCashflow}
       fixedPaymentsSum={fixedPaymentsSum}
       variablePaymentsSum={variablePaymentsSum}

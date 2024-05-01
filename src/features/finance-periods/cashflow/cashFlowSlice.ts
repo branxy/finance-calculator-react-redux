@@ -13,6 +13,7 @@ import { PayloadAction } from "@reduxjs/toolkit"
 import { type RootState } from "../../../app/store"
 import { createAppSelector } from "../../../app/hooks"
 import {
+  deleteCashflowItems,
   generateTestCashflow,
   updateTransaction,
   uploadCompensations,
@@ -25,6 +26,7 @@ import {
   incomeAddedFromCashflow,
   paymentAddedFromCashflow,
   savingsAddedFromCashflow,
+  cashflowDeletedFromCashflow,
 } from "../period/periodsSlice"
 import {
   type EarningsT,
@@ -48,7 +50,7 @@ const testCashflow = generateTestCashflow(
 )
 
 const initialState: CashFlowTable = {
-  cashflow: testCashflow,
+  cashflow: [],
   status: "idle",
   error: null,
 }
@@ -59,8 +61,6 @@ export const cashflowSlice = createAppSlice({
   reducers: create => ({
     paymentAdded: create.asyncThunk(
       async (newPayment: CashflowItem, { dispatch }) => {
-        // dispatch paymentAddedFromCashflow() to periodsSlice
-        // console.log("Received from dispatch:", { newPayment })
         dispatch(
           paymentAddedFromCashflow({
             periodId: newPayment.period_id,
@@ -80,7 +80,6 @@ export const cashflowSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          // add new fixed payment to state
           state.cashflow.push(action.payload.newPayment)
         },
       },
@@ -276,6 +275,44 @@ export const cashflowSlice = createAppSlice({
         },
       },
     ),
+    deletedCashflowItems: create.asyncThunk(
+      async (
+        {
+          periodId,
+          selectedTransactions,
+        }: {
+          periodId: FinancePeriod["id"]
+          selectedTransactions: CashflowItem["id"][]
+        },
+        { dispatch },
+      ) => {
+        dispatch(
+          cashflowDeletedFromCashflow({
+            periodId,
+            deletedTransactionsIds: selectedTransactions,
+          }),
+        )
+        const receivedValues = await deleteCashflowItems(selectedTransactions)
+        return { receivedValues }
+      },
+      {
+        pending: state => {
+          state.status = "loading"
+        },
+        rejected: (state, action) => {
+          state.status = "failed"
+        },
+        fulfilled: (state, action) => {
+          state.status = "succeeded"
+
+          const { cashflow } = state
+          const itemsToDelete = action.payload.receivedValues
+          const newState = cashflow.filter(c => !itemsToDelete.includes(c.id))
+
+          state.cashflow = newState
+        },
+      },
+    ),
   }),
   selectors: {
     selectCashflow: state => state.cashflow,
@@ -287,6 +324,7 @@ export const {
   cashflowItemChanged,
   incomeAdded,
   compensationSubmitted,
+  deletedCashflowItems,
 } = cashflowSlice.actions
 export const { selectCashflow } = cashflowSlice.selectors
 export default cashflowSlice.reducer
