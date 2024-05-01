@@ -6,7 +6,6 @@ import { getDaysBetweenTwoDates } from "./utils"
 
 const App = () => {
   const financePeriods = useAppSelector(selectPeriods)
-  // console.log(financePeriods)
 
   const periods = financePeriods.map((period, i, arr) => {
     const daysToNewPeriod = getDaysBetweenTwoDates(
@@ -14,12 +13,7 @@ const App = () => {
       arr[i + 1]?.start_date,
     )
     return (
-      <Period
-        key={period.id}
-        index={i}
-        {...period}
-        daysToNewPeriod={daysToNewPeriod}
-      />
+      <Period key={period.id} index={i} daysToNewPeriod={daysToNewPeriod} />
     )
   })
 

@@ -2,6 +2,10 @@
   max-width: 480px;
 }
 
+.cashflow-table .selected {
+  background-color: rgba(222, 255, 221, 0.8);
+}
+
 .checkbox {
   width: 48px;
 }

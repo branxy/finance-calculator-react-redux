@@ -1,15 +1,30 @@
 import { createAppSlice } from "../../../app/createAppSlice"
-import type { CashflowItem, CashFlowTable, FinancePeriod } from "../types"
+import type {
+  Cashflow,
+  CashflowItem,
+  CashFlowTable,
+  FinancePeriod,
+  FPCompensations,
+  StockCompensations,
+} from "../types"
 import { v4 as uuidv4 } from "uuid"
 import { getTodayDate } from "../../../utils"
 import { PayloadAction } from "@reduxjs/toolkit"
 import { type RootState } from "../../../app/store"
 import { createAppSelector } from "../../../app/hooks"
-import { updateTransaction, uploadTransaction } from "../api/cashflowApi"
 import {
+  generateTestCashflow,
+  updateTransaction,
+  uploadCompensations,
+  uploadTransaction,
+} from "../api/cashflowApi"
+import {
+  type CompensationAmount,
+  compensationSubmittedFromCashflow,
   endBalanceChanged,
   incomeAddedFromCashflow,
   paymentAddedFromCashflow,
+  savingsAddedFromCashflow,
 } from "../period/periodsSlice"
 import {
   type EarningsT,
@@ -20,14 +35,20 @@ import {
 const sampleCashflowItem: CashflowItem = {
   id: uuidv4(),
   period_id: "1",
-  type: "fixed-payment",
+  type: "payment/fixed",
   title: "Аренда квартиры",
   amount: 20000,
   date: getTodayDate(),
 }
 
+const testCashflow = generateTestCashflow(
+  undefined,
+  ["Аренда", "Аренда", "Аренда"],
+  [20000, 34000, 4000],
+)
+
 const initialState: CashFlowTable = {
-  cashflow: [],
+  cashflow: testCashflow,
   status: "idle",
   error: null,
 }
@@ -69,7 +90,7 @@ export const cashflowSlice = createAppSlice({
         // 1. Pass the income amount to periods reducer
 
         switch (newIncome.type) {
-          case "earning":
+          case "income/profit":
             dispatch(
               incomeAddedFromCashflow({
                 periodId: newIncome.period_id,
@@ -77,7 +98,15 @@ export const cashflowSlice = createAppSlice({
               }),
             )
             break
-          case "":
+          case "income/stock":
+          case "income/forward-payment":
+            dispatch(
+              savingsAddedFromCashflow({
+                periodId: newIncome.period_id,
+                savingType: newIncome.type,
+                savingAmount: newIncome.amount,
+              }),
+            )
             break
           default:
             break
@@ -129,7 +158,7 @@ export const cashflowSlice = createAppSlice({
                 endBalanceChanged({
                   periodId: currentItem.period_id,
                   whatChanged:
-                    currentItem.type === "earning" ? "income" : "payment",
+                    currentItem.type === "income/profit" ? "income" : "payment",
                   difference,
                 }),
               )
@@ -188,20 +217,49 @@ export const cashflowSlice = createAppSlice({
         },
       },
     ),
-    incomeChanged: create.asyncThunk(
+    compensationSubmitted: create.asyncThunk(
       async (
         {
-          cashflowItemId,
-          whatChanged,
-          newValue,
+          periodId,
+          compensationAmount,
         }: {
-          cashflowItemId: CashflowItem["id"]
-          whatChanged: "title" | "amount" | "date"
-          newValue: string | number
+          periodId: FinancePeriod["id"]
+          compensationAmount: CompensationAmount
         },
-        { dispatch, getState },
+        { dispatch },
       ) => {
-        // dispatch balanceChanged() to periodsSlice
+        // if both stock and fp were compensated, split them into separate cashflow objects
+        dispatch(
+          compensationSubmittedFromCashflow({ periodId, compensationAmount }),
+        )
+
+        const newCompensations: Cashflow = []
+
+        if (compensationAmount.stock > 0) {
+          newCompensations.push({
+            id: uuidv4(),
+            period_id: periodId,
+            type: "compensation/stock",
+            title: "compensation from stock",
+            amount: compensationAmount.stock,
+            date: getTodayDate(),
+          })
+        }
+
+        if (compensationAmount.fp > 0) {
+          newCompensations.push({
+            id: uuidv4(),
+            period_id: periodId,
+            type: "compensation/forward-payment",
+            title: "compensation from forward payment",
+            amount: compensationAmount.fp,
+            date: getTodayDate(),
+          })
+        }
+
+        const receivedValues = await uploadCompensations(newCompensations)
+
+        return { receivedValues }
       },
       {
         pending: state => {
@@ -213,7 +271,8 @@ export const cashflowSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          // add new income to state
+          const { cashflow } = state
+          action.payload.receivedValues.forEach(v => cashflow.push(v))
         },
       },
     ),
@@ -223,8 +282,12 @@ export const cashflowSlice = createAppSlice({
   },
 })
 
-export const { paymentAdded, cashflowItemChanged, incomeAdded, incomeChanged } =
-  cashflowSlice.actions
+export const {
+  paymentAdded,
+  cashflowItemChanged,
+  incomeAdded,
+  compensationSubmitted,
+} = cashflowSlice.actions
 export const { selectCashflow } = cashflowSlice.selectors
 export default cashflowSlice.reducer
 
@@ -233,16 +296,18 @@ const returnPeriodId = (
   periodId: FinancePeriod["id"],
 ): FinancePeriod["id"] => periodId
 
-export const selectCashFlowById = createAppSelector(
+export const selectAllCashflowByPeriodId = createAppSelector(
   [selectCashflow, returnPeriodId],
-  (cashflow, periodId: string) =>
+  (cashflow, periodId: string): Cashflow =>
     cashflow.filter(c => c.period_id === periodId),
 )
 
 export const selectEarningsByPeriodId = createAppSelector(
   [selectCashflow, returnPeriodId],
   (earnings, periodId) =>
-    earnings.filter(e => e.type === "earning" && e.period_id === periodId),
+    earnings.filter(
+      e => e.type === "income/profit" && e.period_id === periodId,
+    ),
 )
 
 export const selectAllPaymentsByPeriodId = createAppSelector(
@@ -250,7 +315,7 @@ export const selectAllPaymentsByPeriodId = createAppSelector(
   (payments, periodId) =>
     payments.filter(
       p =>
-        (p.type === "fixed-payment" || p.type === "variable-payment") &&
+        (p.type === "payment/fixed" || p.type === "payment/variable") &&
         p.period_id === periodId,
     ),
 )
@@ -259,7 +324,7 @@ export const selectFixedPaymentsByPeriodId = createAppSelector(
   [selectCashflow, returnPeriodId],
   (payments, periodId) =>
     payments.filter(
-      p => p.type === "fixed-payment" && p.period_id === periodId,
+      p => p.type === "payment/fixed" && p.period_id === periodId,
     ),
 )
 
@@ -267,6 +332,22 @@ export const selectVariablePaymentsByPeriodId = createAppSelector(
   [selectCashflow, returnPeriodId],
   (payments, periodId) =>
     payments.filter(
-      p => p.type === "variable-payment" && p.period_id === periodId,
+      p => p.type === "payment/variable" && p.period_id === periodId,
     ),
+)
+
+export const selectAllStockCompensationsByPeriodId = createAppSelector(
+  [selectCashflow, returnPeriodId],
+  (cashflow, periodId) =>
+    cashflow.filter(
+      c => c.type === "income/stock" && c.period_id === periodId,
+    ) as StockCompensations,
+)
+
+export const selectAllFPCompensationsByPeriodId = createAppSelector(
+  [selectCashflow, returnPeriodId],
+  (cashflow, periodId) =>
+    cashflow.filter(
+      c => c.type === "income/forward-payment" && c.period_id === periodId,
+    ) as FPCompensations,
 )

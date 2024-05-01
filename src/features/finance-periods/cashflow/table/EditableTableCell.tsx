@@ -2,19 +2,16 @@ import { useState, type FunctionComponent } from "react"
 import type { CashflowItem } from "../../types"
 import { useAppDispatch } from "../../../../app/hooks"
 import "./CashflowTable.css"
-import { type CashflowTableProps } from "./CashflowTable"
-import { incomeChanged, cashflowItemChanged } from "../cashflowSlice"
+import { cashflowItemChanged } from "../cashflowSlice"
 import "./CashflowTable.css"
 
 interface EditableTableCellProps {
-  cashflowType: CashflowTableProps["cashflowType"]
   cashflowItemId: CashflowItem["id"]
   cellType: "title" | "amount" | "date"
   cellValue: string | number
 }
 
 const EditableTableCell: FunctionComponent<EditableTableCellProps> = ({
-  cashflowType,
   cashflowItemId,
   cellType,
   cellValue,

@@ -1,15 +1,16 @@
 import { type FunctionComponent } from "react"
-import type { CashflowItem } from "../../types"
-import { type CashflowTableProps } from "./CashflowTable"
+import type { CashflowItem, FinancePeriod } from "../../types"
 import EditableTableCell from "./EditableTableCell"
 
 interface CashflowTableRowProps {
-  cashflowType: CashflowTableProps["cashflowType"]
+  cashflowType: CashflowItem["type"]
   casfhlowItemId: CashflowItem["id"]
   periodId: CashflowItem["period_id"]
   title: CashflowItem["title"]
   amount: CashflowItem["amount"]
   date: CashflowItem["date"]
+  selectedTransactions: FinancePeriod["id"][]
+  handleSelectTransaction: (periodId: FinancePeriod["id"]) => void
 }
 
 const CashflowTableRow: FunctionComponent<CashflowTableRowProps> = ({
@@ -19,32 +20,38 @@ const CashflowTableRow: FunctionComponent<CashflowTableRowProps> = ({
   title,
   amount,
   date,
+  selectedTransactions,
+  handleSelectTransaction,
 }) => {
+  const isSelectedRow = Boolean(
+    selectedTransactions?.find(id => id === casfhlowItemId),
+  )
+
   const shortenedDate = new Date(date).toLocaleDateString().slice(0, 5)
 
   return (
-    <tr className="cashflow-item">
+    <tr className={`cashflow-item ${isSelectedRow ? "selected" : ""}`}>
       <td>
         <input
           type="checkbox"
           name="select-cashflow-item"
+          id="select-cashflow-item"
           aria-label={`Select ${cashflowType}`}
+          onChange={() => handleSelectTransaction(casfhlowItemId)}
+          checked={isSelectedRow}
         />
       </td>
       <EditableTableCell
-        cashflowType={cashflowType}
         cashflowItemId={casfhlowItemId}
         cellType="title"
         cellValue={title}
       />
       <EditableTableCell
-        cashflowType={cashflowType}
         cashflowItemId={casfhlowItemId}
         cellType="date"
         cellValue={date}
       />
       <EditableTableCell
-        cashflowType={cashflowType}
         cashflowItemId={casfhlowItemId}
         cellType="amount"
         cellValue={amount}

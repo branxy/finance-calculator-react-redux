@@ -19,16 +19,16 @@ const SelectTransactionCategory: FunctionComponent<
   if (transactionType === "outcome") {
     select = (
       <>
-        <option value="fixed-payment">Обязательный</option>
-        <option value="variable-payment">Остальное</option>
+        <option value="payment/fixed">Обязательный</option>
+        <option value="payment/variable">Остальное</option>
       </>
     )
   } else if (transactionType === "income") {
     select = (
       <>
-        <option value="earning">Прибыль</option>
-        <option value="add-stock">НЗ</option>
-        <option value="add-forward-payment">Отложенные платежи</option>
+        <option value="income/profit">Прибыль</option>
+        <option value="income/stock">НЗ</option>
+        <option value="income/forward-payment">Отложенные платежи</option>
       </>
     )
   }
@@ -44,7 +44,7 @@ const SelectTransactionCategory: FunctionComponent<
             return { ...prev, type: paymentType }
           })
         }
-        required
+        required={true}
       >
         <option value={undefined}>-Выбрать-</option>
         {select}

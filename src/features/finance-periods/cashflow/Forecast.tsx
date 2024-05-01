@@ -1,13 +1,22 @@
 import { useState, type FunctionComponent } from "react"
-import type { CashflowItem, FinancePeriod } from "../types"
-import { useAppDispatch } from "../../../app/hooks"
+import type {
+  CashflowItem,
+  FPCompensations,
+  FinancePeriod,
+  StockCompensations,
+} from "../types"
+import { useAppDispatch, useAppSelector } from "../../../app/hooks"
 import "./Forecast.css"
-import { compensationSubmitted } from "../period/periodsSlice"
+import { compensationSubmitted } from ".././cashflow/cashflowSlice"
+import {
+  selectAllFPCompensationsByPeriodId,
+  selectAllStockCompensationsByPeriodId,
+} from "./cashflowSlice"
 
 export type EarningsT = {
   id: CashflowItem["id"]
   period_id: CashflowItem["period_id"]
-  type: "earning"
+  type: "income/profit"
   title: CashflowItem["title"]
   amount: CashflowItem["amount"]
   date: CashflowItem["date"]
@@ -16,7 +25,7 @@ export type EarningsT = {
 export type AllPayments = {
   id: CashflowItem["id"]
   period_id: CashflowItem["period_id"]
-  type: "fixed-payment" | "variable-payment"
+  type: "payment/fixed" | "payment/variable"
   title: CashflowItem["title"]
   amount: CashflowItem["amount"]
   date: CashflowItem["date"]
@@ -25,7 +34,7 @@ export type AllPayments = {
 export type FixedPaymentsT = {
   id: CashflowItem["id"]
   period_id: CashflowItem["period_id"]
-  type: "fixed-payment"
+  type: "payment/fixed"
   title: CashflowItem["title"]
   amount: CashflowItem["amount"]
   date: CashflowItem["date"]
@@ -34,7 +43,7 @@ export type FixedPaymentsT = {
 export type VariablePaymentsT = {
   id: CashflowItem["id"]
   period_id: CashflowItem["period_id"]
-  type: "variable-payment"
+  type: "payment/variable"
   title: CashflowItem["title"]
   amount: CashflowItem["amount"]
   date: CashflowItem["date"]
@@ -45,14 +54,8 @@ interface ForecastProps {
   start_balance: FinancePeriod["start_balance"]
   end_balance: FinancePeriod["end_balance"]
   earnings: EarningsT
-  stock: {
-    startAmount: FinancePeriod["stock_start_amount"]
-    endAmount: FinancePeriod["stock_end_amount"]
-  }
-  forwardPayments: {
-    startAmount: FinancePeriod["forward_payments_start_amount"]
-    endAmount: FinancePeriod["forward_payments_end_amount"]
-  }
+  stock: FinancePeriod["stock"]
+  forwardPayments: FinancePeriod["forward_payments"]
   fixedPayments: number
   variablePayments: number
 }
@@ -70,6 +73,9 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   const [sumToCompensateStock, setSumToCompensateStock] = useState(0)
   const [sumToCompensateForwardPayments, setSumToCompensateForwardPayments] =
     useState(0)
+  const [submittedStockCompensation, setSubmittedStockCompensation] =
+    useState(0)
+  const [submittedFPCompensation, setSubmittedFPCompensation] = useState(0)
   const compensationSum = sumToCompensateStock + sumToCompensateForwardPayments
   const shortage = end_balance < 0 ? Math.abs(end_balance) : 0
   const compensationError =
@@ -77,15 +83,45 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   const dispatch = useAppDispatch()
 
   const totalIncome = earnings.reduce((sum, x) => sum + x.amount, 0)
-  const stockCompensationsAmnt = stock.endAmount - stock.startAmount
-  const forwardPaymentsCompensationsAmnt =
-    forwardPayments.endAmount - forwardPayments.startAmount
-  const compensations = `${stockCompensationsAmnt > 0 ? stockCompensationsAmnt : ""} ${forwardPaymentsCompensationsAmnt > 0 ? forwardPaymentsCompensationsAmnt : ""}`
+  const allStockCompensations = useAppSelector(state =>
+    selectAllStockCompensationsByPeriodId(state, periodId),
+  )
+  const allForwardPaymentsCompensations = useAppSelector(state =>
+    selectAllFPCompensationsByPeriodId(state, periodId),
+  )
+
+  const [stockEndAmount, sumOfStockCompensations] =
+    getEndAmountAndSumOfCompensations(stock, allStockCompensations)
+
+  const [forwardPaymentsEndAmount, sumOfForwardPaymentsCompensations] =
+    getEndAmountAndSumOfCompensations(
+      forwardPayments,
+      allForwardPaymentsCompensations,
+    )
+
+  const compensations = `${submittedStockCompensation > 0 ? ` + ${submittedStockCompensation} (НЗ)` : ""}${submittedFPCompensation > 0 ? ` + ${submittedFPCompensation} (ОП)` : ""}`
 
   const error = compensationError && (
     <span className="error">Сумма компенсации превышает сумму недостатка</span>
   )
   const classError = `${compensationError && "error"}`
+
+  function getEndAmountAndSumOfCompensations(
+    startAmount: FinancePeriod["stock"] | FinancePeriod["forward_payments"],
+    compensations: StockCompensations | FPCompensations,
+  ): [number, number] {
+    // sum = compensations.reduce()
+    // endAmount = startAmount - sum
+
+    const sumOfCompensations = compensations.reduce(
+      (sum, x) => sum + x.amount,
+      0,
+    )
+
+    const endAmount = startAmount + sumOfCompensations
+
+    return [endAmount, sumOfCompensations]
+  }
 
   function handleSelectCompensation(e: React.ChangeEvent<HTMLInputElement>) {
     switch (e.target.name) {
@@ -101,6 +137,8 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   }
 
   function handleSubmitCompensation() {
+    // if I want to store compensations in CashflowTable, they need to have a data structure of CashflowItem
+
     if (!compensationError) {
       dispatch(
         compensationSubmitted({
@@ -111,7 +149,8 @@ const Forecast: FunctionComponent<ForecastProps> = ({
           },
         }),
       )
-
+      setSubmittedStockCompensation(prev => prev + sumToCompensateStock)
+      setSubmittedFPCompensation(prev => prev + sumToCompensateForwardPayments)
       setSumToCompensateStock(0)
       setSumToCompensateForwardPayments(0)
     }
@@ -138,15 +177,15 @@ const Forecast: FunctionComponent<ForecastProps> = ({
           }}
         >
           <div className="item">
-            <label htmlFor="stock">НЗ: {stock.endAmount} руб.</label>
-            {stock.endAmount > 0 && (
+            <label htmlFor="stock">НЗ: {stock} руб.</label>
+            {stock > 0 && (
               <input
                 type="number"
                 name="stock"
                 value={sumToCompensateStock}
                 className={`${classError}`}
                 min="0"
-                max={stock.endAmount}
+                max={stock}
                 onFocus={e => e.target.select()}
                 onChange={handleSelectCompensation}
               />
@@ -154,14 +193,14 @@ const Forecast: FunctionComponent<ForecastProps> = ({
           </div>
           <div className="item">
             <label htmlFor="forward-payments">
-              Отложенные платежи: {forwardPayments.endAmount} руб.
+              Отложенные платежи: {forwardPayments} руб.
             </label>
-            {forwardPayments.endAmount > 0 && (
+            {forwardPayments > 0 && (
               <input
                 type="number"
                 name="forward-payments"
                 min="0"
-                max={forwardPayments.endAmount}
+                max={forwardPayments}
                 value={sumToCompensateForwardPayments}
                 className={`${classError}`}
                 onFocus={e => e.target.select()}

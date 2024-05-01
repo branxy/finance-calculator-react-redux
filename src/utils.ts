@@ -19,8 +19,5 @@ export function getDaysBetweenTwoDates(
   const daysBetweenPeriods = Math.floor(
     (greaterPeriodTimestamp - lesserPeriodTimestamp) / (1000 * 60 * 60 * 24),
   )
-  console.log({ daysBetweenPeriods })
   return daysBetweenPeriods
 }
-
-function calculatePeriodEndBalance() {}

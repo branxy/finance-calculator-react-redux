@@ -1,8 +1,9 @@
 import { useState, type FunctionComponent } from "react"
-import type { Cashflow, FinancePeriod } from "../types"
+import type { FinancePeriod } from "../types"
 import { useAppDispatch, useAppSelector } from "../../../app/hooks"
 import {
   periodAdded,
+  selectPeriodByIndex,
   startBalanceChanged,
   startDateChanged,
 } from "./periodsSlice"
@@ -17,7 +18,6 @@ import Forecast, {
 } from "../cashflow/Forecast"
 import {
   selectAllPaymentsByPeriodId,
-  selectCashFlowById,
   selectEarningsByPeriodId,
   selectFixedPaymentsByPeriodId,
   selectVariablePaymentsByPeriodId,
@@ -25,34 +25,33 @@ import {
 import Earnings from "../cashflow/Earnings"
 import "./Period.css"
 import DaysToNewPeriod from "./DaysToNewPeriod"
+import AllTransactions from "../cashflow/AllTransactions"
 
 interface PeriodProps {
   index: number
-  id: FinancePeriod["id"]
-  user_id: FinancePeriod["user_id"]
-  start_date: FinancePeriod["start_date"]
-  start_balance: FinancePeriod["start_balance"]
-  end_balance: FinancePeriod["end_balance"]
-  stock_end_amount: FinancePeriod["stock_end_amount"]
-  forward_payments_end_amount: FinancePeriod["forward_payments_end_amount"]
-  forward_payments_start_amount: FinancePeriod["forward_payments_start_amount"]
+  // id: FinancePeriod["id"]
+  // user_id: FinancePeriod["user_id"]
+  // start_date: FinancePeriod["start_date"]
+  // start_balance: FinancePeriod["start_balance"]
+  // end_balance: FinancePeriod["end_balance"]
+  // stock: FinancePeriod["stock"]
+  // forward_payments: FinancePeriod["forward_payments"]
   daysToNewPeriod: number | undefined
 }
 
 const Period: FunctionComponent<PeriodProps> = props => {
+  const { index, daysToNewPeriod } = props
+  const [isEditingStartDate, setIsEditingStartDate] = useState(false)
+  const period = useAppSelector(state => selectPeriodByIndex(state, index))
   const {
-    index,
     id,
     user_id,
     start_date,
     start_balance,
     end_balance,
-    stock_end_amount,
-    forward_payments_end_amount,
-    forward_payments_start_amount,
-    daysToNewPeriod,
-  } = props
-  const [isEditingStartDate, setIsEditingStartDate] = useState(false)
+    stock,
+    forward_payments,
+  } = period
   const earnings = useAppSelector(state =>
     selectEarningsByPeriodId(state, id),
   ) as EarningsT
@@ -75,9 +74,6 @@ const Period: FunctionComponent<PeriodProps> = props => {
   const variablePaymentsSum = variablePayments.reduce((sum, x) => {
     return sum + x.amount
   }, 0)
-
-  const isntFirstPeriod = index !== 0
-
 
   function handleAddFinancePeriod() {
     // check
@@ -140,6 +136,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
         {index === 0 ? (
           <input
             type="number"
+            name="start-balance"
             value={start_balance}
             min="1"
             onFocus={e => e.target.select()}
@@ -150,46 +147,26 @@ const Period: FunctionComponent<PeriodProps> = props => {
         )}
       </div>
       <DaysToNewPeriod periodIndex={index} daysToNewPeriod={daysToNewPeriod} />
-      {isntFirstPeriod && (
-        <div className="earnings">
-          <Dropdown title="Доходы" isOpenByDefault={true}>
-            <Earnings
-              periodId={id}
-              earnings={earnings}
-              end_balance={end_balance}
-            />
-          </Dropdown>
-        </div>
-      )}
-      <div className="payments">
-        <Dropdown title="Расходы" isOpenByDefault={true}>
-          <AddTransaction
-            periodId={id}
-            transactionType="outcome"
-            fixedPaymentsLength={fixedPayments.length}
-            variablePaymentsLength={variablePayments.length}
-            end_balance={end_balance}
-          />
-          <Payments
-            payments={allPayments}
-            fixedPaymentsSum={fixedPaymentsSum}
-            variablePaymentsSum={variablePaymentsSum}
-          />
-        </Dropdown>
-      </div>
+      <Dropdown title="Оборот" isOpenByDefault={true}>
+        <AllTransactions
+          periodId={id}
+          periodIndex={index}
+          earnings={earnings}
+          end_balance={end_balance}
+          allPayments={allPayments}
+          fixedPaymentsSum={fixedPaymentsSum}
+          variablePaymentsSum={variablePaymentsSum}
+          fixedPaymentsLength={fixedPayments.length}
+          variablePaymentsLength={variablePayments.length}
+        />
+      </Dropdown>
       <Forecast
         periodId={id}
         start_balance={start_balance}
         end_balance={end_balance}
         earnings={earnings}
-        stock={{
-          startAmount: stock_end_amount,
-          endAmount: stock_end_amount,
-        }}
-        forwardPayments={{
-          startAmount: forward_payments_start_amount,
-          endAmount: forward_payments_end_amount,
-        }}
+        stock={stock}
+        forwardPayments={forward_payments}
         fixedPayments={fixedPaymentsSum}
         variablePayments={variablePaymentsSum}
       />

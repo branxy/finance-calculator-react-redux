@@ -35,25 +35,37 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
 
   const [newTransaction, setNewTransaction] =
     useState<Omit<CashflowItem, "id">>(sampleTransaction)
+  const [error, setError] = useState<string | null>(null)
+
+  const errorMessage = <span className="error">{error}</span>
 
   function handleNewTransaction(transaction: Omit<CashflowItem, "id">) {
-    console.log({ transaction })
     // 1. Determines transactionType
     // 2. If it's payment, submitPayment()
     // 3. If it's income, submitIncome()
     const newTransactionIsFilled =
-      newTransaction.title.length > 0 && newTransaction.amount > 0
+      newTransaction.title.length > 0 &&
+      newTransaction.amount > 0 &&
+      transaction.type !== undefined
     const isPayment =
-      transaction.type === "fixed-payment" ||
-      transaction.type === "variable-payment"
-    if (isPayment && newTransactionIsFilled) {
+      transaction.type === "payment/fixed" ||
+      transaction.type === "payment/variable"
+    const isIncome =
+      transaction.type === "income/profit" ||
+      transaction.type === "income/stock" ||
+      transaction.type === "income/forward-payment"
+    if (!newTransactionIsFilled) {
+      setError("Заполните все поля транзакции")
+      return
+    }
+
+    if (isPayment) {
+      setError(null)
       submitPayment(transaction)
-    } else if (transaction.type === "earning" && newTransactionIsFilled) {
+    } else if (isIncome) {
+      setError(null)
       submitIncome(transaction)
-    } else
-      throw new Error(
-        `Unknown transaction.type: "${transaction.type}", at handleNewTransaction()`,
-      )
+    }
 
     setNewTransaction({ ...sampleTransaction, type: transaction.type })
   }
@@ -72,7 +84,6 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
     const newTransaction = {
       ...transaction,
       id: uuidv4(),
-      type: "earning",
     } as CashflowItem
     dispatch(incomeAdded(newTransaction))
   }
@@ -117,10 +128,11 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         setNewTransaction={setNewTransaction}
       />
       <div className="title form-item">
-        <label htmlFor="title">Название: </label>
+        <label htmlFor="transaction-title">Название: </label>
         <input
           type="text"
           name="title"
+          id="transaction-title"
           required
           size={16}
           value={newTransaction.title}
@@ -129,10 +141,11 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         />
       </div>
       <div className="amount form-item">
-        <label htmlFor="amount">Сумма: </label>
+        <label htmlFor="transaction-amount">Сумма: </label>
         <input
           type="number"
           name="amount"
+          id="transaction-amount"
           required
           min="1"
           value={newTransaction.amount || ""}
@@ -141,15 +154,17 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         />
       </div>
       <div className="date form-item">
-        <label htmlFor="date">Дата: </label>
+        <label htmlFor="transaction-date">Дата: </label>
         <input
           type="date"
           name="date"
+          id="transaction-date"
           value={newTransaction.date}
           required={true}
           onChange={handleNewPaymentChange}
         />
       </div>
+      {error && errorMessage}
       <div className="actions form-item">
         <button onClick={() => handleNewTransaction(newTransaction)}>
           <span className="material-symbols-outlined">add</span>

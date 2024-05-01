@@ -1,16 +1,39 @@
 .dropdown {
-  min-width: 360px;
+  /* min-width: 360px; */
   width: fit-content;
   border: 1px solid black;
   border-radius: 8px;
-  padding: 4px 8px;
+}
+
+.dropdown.open {
+  padding: 8px 16px;
+}
+
+.dropdown.closed {
+  height: 42px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.dropdown.closed .content {
+  display: none;
 }
 
 .dropdown .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 36px;
+  gap: 8px;
+  height: 100%;
+}
+
+.dropdown .header h3 {
+  width: 100%;
+  margin-top: 0;
+  padding-bottom: 4px;
+  cursor: pointer;
 }
 
 .dropdown .content {
@@ -20,11 +43,19 @@
   gap: 32px;
 }
 
-.dropdown h3 {
-  width: 100%;
-  margin-top: 0;
-  padding-bottom: 4px;
-  cursor: pointer;
+.dropdown .all-transactions {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 48px;
+}
+
+.dropdown .input {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 60px;
 }
 
 .dropdown .toggle {
@@ -33,14 +64,6 @@
 
 .dropdown .toggle:hover {
   background-color: rgba(108, 196, 234, 0.3);
-}
-
-.dropdown.closed {
-  height: 46px;
-}
-
-.dropdown.closed .content {
-  display: none;
 }
 
 @media screen and (max-width: 768px) {

@@ -1,6 +1,6 @@
 import { type FunctionComponent } from "react"
 import { useAppSelector } from "../../../app/hooks"
-import { selectPeriodStartDateByIndex, selectPeriods } from "./periodsSlice"
+import { selectPeriodStartDateByIndex } from "./periodsSlice"
 
 interface DaysToNewPeriodProps {
   periodIndex: number

@@ -1,32 +1,30 @@
 import { type FunctionComponent } from "react"
-import type {} from "../types"
-import { type AllPayments } from "./Forecast"
-import CashflowTable from "./table/CashflowTable"
+import type { FinancePeriod } from "../types"
+import AddTransaction from "./AddTransaction"
 
 interface FixedPaymentsProps {
-  payments: AllPayments
-  fixedPaymentsSum: number
-  variablePaymentsSum: number
+  periodId: FinancePeriod["id"]
+  fixedPaymentsLength?: number
+  variablePaymentsLength?: number
+  end_balance: FinancePeriod["end_balance"]
 }
 
 const Payments: FunctionComponent<FixedPaymentsProps> = ({
-  payments,
-  fixedPaymentsSum,
-  variablePaymentsSum,
+  periodId,
+  fixedPaymentsLength,
+  variablePaymentsLength,
+  end_balance,
 }) => {
-  const paymentsTable = payments.length > 0 && (
-    <CashflowTable cashflowType="payment" tableItems={payments} />
-  )
-
   return (
-    <div className="list">
-      {fixedPaymentsSum > 0 && (
-        <p>Обязательные платежи: {fixedPaymentsSum} руб.</p>
-      )}
-      {variablePaymentsSum > 0 && (
-        <p>Остальные платежи: {variablePaymentsSum} руб.</p>
-      )}
-      {paymentsTable}
+    <div className="payments">
+      <h4>Расходы</h4>
+      <AddTransaction
+        periodId={periodId}
+        transactionType="outcome"
+        fixedPaymentsLength={fixedPaymentsLength}
+        variablePaymentsLength={variablePaymentsLength}
+        end_balance={end_balance}
+      />
     </div>
   )
 }

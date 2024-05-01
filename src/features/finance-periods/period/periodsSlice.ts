@@ -8,6 +8,7 @@ import {
   updateStartDate,
   updatePeriodsBalance,
   updateCompensation,
+  uploadNewSavings,
 } from "../api/periodsApi"
 import { type RootState } from "../../../app/store"
 import { createAppSelector } from "../../../app/hooks"
@@ -20,10 +21,8 @@ const initialState: InitialState = {
       start_date: getTodayDate(),
       start_balance: 0,
       end_balance: 0,
-      stock_start_amount: 6000,
-      stock_end_amount: 6000,
-      forward_payments_start_amount: 12000,
-      forward_payments_end_amount: 12000,
+      stock: 6000,
+      forward_payments: 12000,
     },
   ],
   status: "idle",
@@ -67,13 +66,14 @@ export type ValuesToUpdate = ValueToUpdate[]
 interface CompensationToUpdate {
   periodId: FinancePeriod["id"]
   periodIndex: number
-  savingType: "add-stock" | "add-forward-payment"
-  amount: CashflowItem["amount"]
+  savingType: "income/stock" | "income/forward-payment"
+  newStockStartAmount: CashflowItem["amount"]
+  newFPStartAmount: CashflowItem["amount"]
 }
 
-type CompensationsToUpdate = CompensationToUpdate[]
+export type CompensationsToUpdate = CompensationToUpdate[]
 
-interface CompensationAmount {
+export interface CompensationAmount {
   stock: number
   fp: number
 }
@@ -83,10 +83,8 @@ interface PaymentSubmittedSingle {
   periodIndex: number
   newStartBalance: FinancePeriod["start_balance"]
   newEndBalance: FinancePeriod["end_balance"]
-  newStockStart: FinancePeriod["stock_start_amount"]
-  newStockEnd: FinancePeriod["stock_end_amount"]
-  newFPStart: FinancePeriod["forward_payments_start_amount"]
-  newFPEnd: FinancePeriod["forward_payments_end_amount"]
+  newStockStart: FinancePeriod["stock"]
+  newFPStart: FinancePeriod["forward_payments"]
 }
 
 export type PaymentSubmittedUpdates = PaymentSubmittedSingle[]
@@ -105,18 +103,15 @@ export const periodsSlice = createAppSlice({
         )
 
         if (prevPeriod) {
-          const { end_balance, stock_end_amount, forward_payments_end_amount } =
-            prevPeriod
+          const { end_balance, stock, forward_payments } = prevPeriod
 
           const newPeriod: Omit<FinancePeriod, "id"> = {
             user_id: user_id,
             start_date: prevPeriod.start_date,
             start_balance: end_balance,
             end_balance: end_balance,
-            stock_start_amount: stock_end_amount,
-            stock_end_amount: stock_end_amount,
-            forward_payments_start_amount: forward_payments_end_amount,
-            forward_payments_end_amount: forward_payments_end_amount,
+            stock: stock,
+            forward_payments: forward_payments,
           }
 
           const receivedPeriod: FinancePeriod = await uploadPeriod(newPeriod)
@@ -539,10 +534,11 @@ export const periodsSlice = createAppSlice({
       async (
         {
           periodId,
+          savingType,
           savingAmount,
         }: {
           periodId: FinancePeriod["id"]
-          savingType: "add-stock" | "add-forward-payment"
+          savingType: "income/stock" | "income/forward-payment"
           savingAmount: CashflowItem["amount"]
         },
         { getState },
@@ -558,10 +554,29 @@ export const periodsSlice = createAppSlice({
           const valuesToUpdate: CompensationsToUpdate = []
 
           for (let i = currentPeriodIndex; i < periods.length; i++) {
+            // finish updating stock | forward-payment | both. This is coming from <AddTransaction /> as income
             const p = periods[i]
-            let newStartBalanceForPeriod
-            let newEndBalanceForPeriod
+            let newStockStartAmount = p.stock
+            let newFPStartAmount = p.forward_payments
+
+            if (savingType === "income/stock") {
+              newStockStartAmount = p.stock + savingAmount
+            } else if (savingType === "income/forward-payment") {
+              newFPStartAmount = p.forward_payments + savingAmount
+            }
+
+            valuesToUpdate.push({
+              periodId: p.id,
+              periodIndex: i,
+              savingType,
+              newStockStartAmount,
+              newFPStartAmount,
+            })
           }
+
+          const receivedValues = await uploadNewSavings(valuesToUpdate)
+
+          return { receivedValues }
         } else {
           throw new Error(`Period with id ${periodId} not found`)
         }
@@ -577,28 +592,28 @@ export const periodsSlice = createAppSlice({
           state.status = "succeeded"
 
           const { periods } = state
-          //   const { newPeriods } = action.payload
-          //   const currentIndex = periods.findIndex(
-          //     p => p.id === newPeriods[0].periodId,
-          //   )
+          const { receivedValues } = action.payload
+          const currentIndex = periods.findIndex(
+            p => p.id === receivedValues[0].periodId,
+          )
 
-          //   const newPeriodsMap = new Map(newPeriods.map(p => [p.periodId, p]))
+          const newValuesMap = new Map(receivedValues.map(p => [p.periodId, p]))
 
-          //   for (let i = currentIndex; i < periods.length; i++) {
-          //     const p = periods[i]
-          //     const newValue = newPeriodsMap.get(p.id)
+          for (let i = currentIndex; i < periods.length; i++) {
+            const p = periods[i]
+            const newValue = newValuesMap.get(p.id)
 
-          //     if (newValue) {
-          //       const { newStartBalance, newEndBalance } = newValue
+            if (newValue) {
+              const { newStockStartAmount, newFPStartAmount } = newValue
 
-          //       p.start_balance = newStartBalance
-          //       p.end_balance = newEndBalance
-          //     }
-          //   }
+              p.stock = newStockStartAmount
+              p.forward_payments = newFPStartAmount
+            }
+          }
         },
       },
     ),
-    compensationSubmitted: create.asyncThunk(
+    compensationSubmittedFromCashflow: create.asyncThunk(
       async (
         {
           periodId,
@@ -630,28 +645,18 @@ export const periodsSlice = createAppSlice({
 
           for (let i = currentPeriodIndex; i < periods.length; i++) {
             const p = periods[i]
-            let newStartBalance,
-              newEndBalance,
-              newStockStart,
-              newStockEnd,
-              newFPStart,
-              newFPEnd
+            let newStartBalance, newEndBalance, newStockStart, newFPStart
 
             if (p.id === currentPeriod.id) {
               newStartBalance = p.start_balance
               newEndBalance = p.end_balance + compensationSum
-              newStockStart = p.stock_start_amount
-              newStockEnd = p.stock_end_amount - compensationAmount.stock
-              newFPStart = p.forward_payments_start_amount
-              newFPEnd = p.forward_payments_end_amount - compensationAmount.fp
+              newStockStart = p.stock - compensationAmount.stock
+              newFPStart = p.forward_payments - compensationAmount.fp
             } else {
               newStartBalance = p.start_balance + compensationSum
               newEndBalance = p.end_balance + compensationSum
-              newStockStart = p.stock_start_amount - compensationAmount.stock
-              newStockEnd = p.stock_end_amount - compensationAmount.stock
-              newFPStart =
-                p.forward_payments_start_amount - compensationAmount.fp
-              newFPEnd = p.forward_payments_end_amount - compensationAmount.fp
+              newStockStart = p.stock - compensationAmount.stock
+              newFPStart = p.forward_payments - compensationAmount.fp
             }
 
             valuesToUpdate.push({
@@ -660,9 +665,7 @@ export const periodsSlice = createAppSlice({
               newStartBalance,
               newEndBalance,
               newStockStart,
-              newStockEnd,
               newFPStart,
-              newFPEnd,
             })
           }
 
@@ -705,17 +708,13 @@ export const periodsSlice = createAppSlice({
                 newStartBalance,
                 newEndBalance,
                 newStockStart,
-                newStockEnd,
                 newFPStart,
-                newFPEnd,
               } = newValue as PaymentSubmittedSingle
 
               p.start_balance = newStartBalance
               p.end_balance = newEndBalance
-              p.stock_start_amount = newStockStart
-              p.stock_end_amount = newStockEnd
-              p.forward_payments_start_amount = newFPStart
-              p.forward_payments_end_amount = newFPEnd
+              p.stock = newStockStart
+              p.forward_payments = newFPStart
             }
           }
         },
@@ -753,12 +752,22 @@ export const {
   endBalanceChanged,
   paymentAddedFromCashflow,
   incomeAddedFromCashflow,
-  compensationSubmitted,
+  savingsAddedFromCashflow,
+  compensationSubmittedFromCashflow,
 } = periodsSlice.actions
 export const { selectPeriods } = periodsSlice.selectors
 export default periodsSlice.reducer
 
+const getId = (
+  state: RootState,
+  id: FinancePeriod["id"],
+): FinancePeriod["id"] => id
 const getIndex = (state: RootState, index: number): number => index
+
+export const selectPeriodByIndex = createAppSelector(
+  [selectPeriods, getIndex],
+  (state, index) => state[index],
+)
 
 export const selectPeriodStartDateByIndex = createAppSelector(
   [selectPeriods, getIndex],

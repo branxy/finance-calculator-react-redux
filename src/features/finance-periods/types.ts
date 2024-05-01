@@ -4,10 +4,8 @@ export interface FinancePeriod {
   start_date: string
   start_balance: number
   end_balance: number
-  stock_start_amount: number
-  stock_end_amount: number
-  forward_payments_start_amount: number
-  forward_payments_end_amount: number
+  stock: number
+  forward_payments: number
 }
 
 export type Periods = FinancePeriod[]
@@ -16,11 +14,13 @@ export interface CashflowItem {
   id: string
   period_id: FinancePeriod["id"]
   type?:
-    | "earning"
-    | "fixed-payment"
-    | "variable-payment"
-    | "add-stock"
-    | "add-forward-payment"
+    | "income/profit"
+    | "income/stock"
+    | "income/forward-payment"
+    | "payment/fixed"
+    | "payment/variable"
+    | "compensation/stock"
+    | "compensation/forward-payment"
   title: string
   amount: number
   date: string
@@ -33,3 +33,25 @@ export interface CashFlowTable {
   status: "idle" | "loading" | "succeeded" | "failed"
   error: string | null
 }
+
+export interface StockCompensation {
+  id: CashflowItem["id"]
+  period_id: CashflowItem["period_id"]
+  type: "income/stock"
+  title: CashflowItem["title"]
+  amount: CashflowItem["amount"]
+  date: CashflowItem["date"]
+}
+
+export type StockCompensations = StockCompensation[]
+
+export interface FPCompensation {
+  id: CashflowItem["id"]
+  period_id: CashflowItem["period_id"]
+  type: "income/forward-payment"
+  title: CashflowItem["title"]
+  amount: CashflowItem["amount"]
+  date: CashflowItem["date"]
+}
+
+export type FPCompensations = FPCompensation[]
