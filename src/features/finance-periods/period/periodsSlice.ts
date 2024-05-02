@@ -2,7 +2,7 @@ import { getDaysBetweenTwoDates, getTodayDate } from "../../../utils"
 import type { Periods, FinancePeriod, CashflowItem, Cashflow } from "../types"
 import { v4 as uuidv4 } from "uuid"
 import { createAppSlice } from "../../../app/createAppSlice"
-import { type PayloadAction } from "@reduxjs/toolkit"
+import { createEntityAdapter, type PayloadAction } from "@reduxjs/toolkit"
 import {
   uploadPeriod,
   updateStartDate,
@@ -14,8 +14,14 @@ import {
 import { type RootState } from "../../../app/store"
 import { createAppSelector } from "../../../app/hooks"
 
-const initialState: InitialState = {
-  periods: [
+const periodsAdapter = createEntityAdapter<FinancePeriod>()
+
+const initialState = periodsAdapter.getInitialState(
+  {
+    status: "idle",
+    error: null,
+  },
+  [
     {
       id: "1",
       user_id: uuidv4(),
@@ -26,9 +32,7 @@ const initialState: InitialState = {
       forward_payments: 12000,
     },
   ],
-  status: "idle",
-  error: null,
-}
+)
 
 interface InitialState {
   periods: Periods
@@ -109,9 +113,7 @@ export const periodsSlice = createAppSlice({
       async ({ prevPeriodId, user_id }: addPeriodProps, { getState }) => {
         const state = getState() as RootState
 
-        const prevPeriod = state.periods.periods.find(
-          p => p.id === prevPeriodId,
-        )
+        const prevPeriod = state.periods.entities[prevPeriodId]
 
         if (prevPeriod) {
           const { end_balance, stock, forward_payments } = prevPeriod
@@ -141,7 +143,9 @@ export const periodsSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          state.periods.push(action.payload.newPeriod)
+          const { newPeriod } = action.payload
+          periodsAdapter.addOne(state, newPeriod)
+          // state.periods.push(action.payload.newPeriod)
         },
       },
     ),
