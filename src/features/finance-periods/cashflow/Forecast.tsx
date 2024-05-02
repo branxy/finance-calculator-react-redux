@@ -1,17 +1,8 @@
 import { useState, type FunctionComponent } from "react"
-import type {
-  CashflowItem,
-  FPCompensations,
-  FinancePeriod,
-  StockCompensations,
-} from "../types"
-import { useAppDispatch, useAppSelector } from "../../../app/hooks"
+import type { CashflowItem, FinancePeriod } from "../types"
+import { useAppDispatch } from "../../../app/hooks"
 import "./Forecast.css"
 import { compensationSubmitted } from ".././cashflow/cashflowSlice"
-import {
-  selectAllFPCompensationsByPeriodId,
-  selectAllStockCompensationsByPeriodId,
-} from "./cashflowSlice"
 
 export type EarningsT = {
   id: CashflowItem["id"]
@@ -70,34 +61,21 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   fixedPayments,
   variablePayments,
 }) => {
+  const dispatch = useAppDispatch()
+
   const [sumToCompensateStock, setSumToCompensateStock] = useState(0)
   const [sumToCompensateForwardPayments, setSumToCompensateForwardPayments] =
     useState(0)
   const [submittedStockCompensation, setSubmittedStockCompensation] =
     useState(0)
   const [submittedFPCompensation, setSubmittedFPCompensation] = useState(0)
+
   const compensationSum = sumToCompensateStock + sumToCompensateForwardPayments
   const shortage = end_balance < 0 ? Math.abs(end_balance) : 0
   const compensationError =
     (shortage === 0 && compensationSum > 0) || compensationSum > shortage
-  const dispatch = useAppDispatch()
 
   const totalIncome = earnings.reduce((sum, x) => sum + x.amount, 0)
-  const allStockCompensations = useAppSelector(state =>
-    selectAllStockCompensationsByPeriodId(state, periodId),
-  )
-  const allForwardPaymentsCompensations = useAppSelector(state =>
-    selectAllFPCompensationsByPeriodId(state, periodId),
-  )
-
-  const [stockEndAmount, sumOfStockCompensations] =
-    getEndAmountAndSumOfCompensations(stock, allStockCompensations)
-
-  const [forwardPaymentsEndAmount, sumOfForwardPaymentsCompensations] =
-    getEndAmountAndSumOfCompensations(
-      forwardPayments,
-      allForwardPaymentsCompensations,
-    )
 
   const compensations = `${submittedStockCompensation > 0 ? ` + ${submittedStockCompensation} (НЗ)` : ""}${submittedFPCompensation > 0 ? ` + ${submittedFPCompensation} (ОП)` : ""}`
 
@@ -105,20 +83,6 @@ const Forecast: FunctionComponent<ForecastProps> = ({
     <span className="error">Сумма компенсации превышает сумму недостатка</span>
   )
   const classError = `${compensationError && "error"}`
-
-  function getEndAmountAndSumOfCompensations(
-    startAmount: FinancePeriod["stock"] | FinancePeriod["forward_payments"],
-    compensations: StockCompensations | FPCompensations,
-  ): [number, number] {
-    const sumOfCompensations = compensations.reduce(
-      (sum, x) => sum + x.amount,
-      0,
-    )
-
-    const endAmount = startAmount + sumOfCompensations
-
-    return [endAmount, sumOfCompensations]
-  }
 
   function handleSelectCompensation(e: React.ChangeEvent<HTMLInputElement>) {
     switch (e.target.name) {

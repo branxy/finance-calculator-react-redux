@@ -13,7 +13,12 @@ const App = () => {
       arr[i + 1]?.start_date,
     )
     return (
-      <Period key={period.id} index={i} daysToNewPeriod={daysToNewPeriod} />
+      <Period
+        key={period.id}
+        id={period.id}
+        index={i}
+        daysToNewPeriod={daysToNewPeriod}
+      />
     )
   })
 

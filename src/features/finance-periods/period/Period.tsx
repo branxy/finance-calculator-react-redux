@@ -2,7 +2,7 @@ import { useState, type FunctionComponent } from "react"
 import { useAppDispatch, useAppSelector } from "../../../app/hooks"
 import {
   periodAdded,
-  selectPeriodByIndex,
+  selectPeriodById,
   startBalanceChanged,
   startDateChanged,
 } from "./periodsSlice"
@@ -22,24 +22,27 @@ import {
 import "./Period.css"
 import DaysToNewPeriod from "./DaysToNewPeriod"
 import AllTransactions from "../cashflow/AllTransactions"
+import type { FinancePeriod } from "../types"
 
 interface PeriodProps {
+  id: FinancePeriod["id"]
   index: number
   daysToNewPeriod: number | undefined
 }
 
 const Period: FunctionComponent<PeriodProps> = props => {
-  const { index, daysToNewPeriod } = props
-  const [isEditingStartDate, setIsEditingStartDate] = useState(false)
+  const { id, index, daysToNewPeriod } = props
   const {
-    id,
     user_id,
     start_date,
     start_balance,
     end_balance,
     stock,
     forward_payments,
-  } = useAppSelector(state => selectPeriodByIndex(state, index))
+  } = useAppSelector(state => selectPeriodById(state, id))
+
+  const [isEditingStartDate, setIsEditingStartDate] = useState(false)
+
   const earnings = useAppSelector(state =>
     selectEarningsByPeriodId(state, id),
   ) as EarningsT

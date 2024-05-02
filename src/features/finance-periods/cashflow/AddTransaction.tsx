@@ -88,13 +88,6 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
     dispatch(incomeAdded(newTransaction))
   }
 
-  function addSavings(transaction: Omit<CashflowItem, "id">) {
-    const newSavings: CashflowItem = {
-      id: uuidv4(),
-      ...transaction,
-    }
-  }
-
   function handleNewPaymentChange(e: React.ChangeEvent<HTMLInputElement>) {
     setNewTransaction(prev => {
       const value = e.target.value
@@ -102,13 +95,10 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
       switch (inputName) {
         case "title":
           return { ...prev, title: value }
-          break
         case "amount":
           return { ...prev, amount: Number(value) }
-          break
         case "date":
           return { ...prev, date: value }
-          break
         default:
           throw new Error(`Unknown input: ${e.target}`)
       }

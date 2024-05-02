@@ -9,7 +9,6 @@ import type {
 } from "../types"
 import { v4 as uuidv4 } from "uuid"
 import { getTodayDate } from "../../../utils"
-import { PayloadAction } from "@reduxjs/toolkit"
 import { type RootState } from "../../../app/store"
 import { createAppSelector } from "../../../app/hooks"
 import {
@@ -28,11 +27,7 @@ import {
   savingsAddedFromCashflow,
   cashflowDeletedFromCashflow,
 } from "../period/periodsSlice"
-import {
-  type EarningsT,
-  type FixedPaymentsT,
-  type VariablePaymentsT,
-} from "./Forecast"
+import { createEntityAdapter } from "@reduxjs/toolkit"
 
 const sampleCashflowItem: CashflowItem = {
   id: uuidv4(),
@@ -49,11 +44,11 @@ const testCashflow = generateTestCashflow(
   [20000, 34000, 4000],
 )
 
-const initialState: CashFlowTable = {
-  cashflow: [],
+const casfhlowAdapter = createEntityAdapter<CashflowItem>()
+const initialState = casfhlowAdapter.getInitialState({
   status: "idle",
   error: null,
-}
+})
 
 export const cashflowSlice = createAppSlice({
   name: "cashflow",
@@ -79,8 +74,9 @@ export const cashflowSlice = createAppSlice({
         },
         fulfilled: (state, action) => {
           state.status = "succeeded"
+          const { newPayment } = action.payload
 
-          state.cashflow.push(action.payload.newPayment)
+          casfhlowAdapter.addOne(state, newPayment)
         },
       },
     ),
@@ -124,9 +120,10 @@ export const cashflowSlice = createAppSlice({
         },
         fulfilled: (state, action) => {
           state.status = "succeeded"
+          const { newIncome } = action.payload
 
           // add new income to state
-          state.cashflow.push(action.payload.newIncome)
+          casfhlowAdapter.addOne(state, newIncome)
         },
       },
     ),
@@ -144,12 +141,12 @@ export const cashflowSlice = createAppSlice({
         { dispatch, getState },
       ) => {
         const {
-          cashflow: { cashflow },
+          cashflow: { entities },
         } = getState() as RootState
 
         if (whatChanged === "amount" && typeof newValue === "number") {
           if (newValue >= 0 && newValue <= 100000000000) {
-            const currentItem = cashflow.find(i => i.id === cashflowItemId)
+            const currentItem = entities[cashflowItemId]
             if (currentItem) {
               // dispatch balanceChanged() to periodsSlice
               const difference = newValue - currentItem.amount
@@ -186,15 +183,11 @@ export const cashflowSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          const { cashflow } = state
-          const updatedValue = action.payload
-          const itemToUpdate = cashflow.find(
-            i => i.id === action.payload.itemId,
-          )
+          const { entities: cashflow } = state
+          const { itemId, newValueType, newValue } = action.payload
+          const itemToUpdate = cashflow[itemId]
 
           if (itemToUpdate) {
-            const { newValue, newValueType } = updatedValue
-
             if (newValueType === "title" && typeof newValue === "string") {
               itemToUpdate.title = newValue
             } else if (
@@ -211,8 +204,7 @@ export const cashflowSlice = createAppSlice({
               throw new Error(
                 `Unknown cashflow property: ${newValueType}, or data type of new value: ${typeof newValue} `,
               )
-          } else
-            throw new Error(`Item with id ${updatedValue.itemId} not found`)
+          } else throw new Error(`Item with id ${itemId} not found`)
         },
       },
     ),
@@ -268,10 +260,10 @@ export const cashflowSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
-          state.status = "succeeded"
+          const { receivedValues } = action.payload
+          casfhlowAdapter.addMany(state, receivedValues)
 
-          const { cashflow } = state
-          action.payload.receivedValues.forEach(v => cashflow.push(v))
+          state.status = "succeeded"
         },
       },
     ),
@@ -292,8 +284,8 @@ export const cashflowSlice = createAppSlice({
             deletedTransactionsIds: selectedTransactions,
           }),
         )
-        const receivedValues = await deleteCashflowItems(selectedTransactions)
-        return { receivedValues }
+        const itemsToDelete = await deleteCashflowItems(selectedTransactions)
+        return itemsToDelete
       },
       {
         pending: state => {
@@ -303,21 +295,20 @@ export const cashflowSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
+          const itemsToDelete = action.payload
+          casfhlowAdapter.removeMany(state, itemsToDelete)
+
           state.status = "succeeded"
-
-          const { cashflow } = state
-          const itemsToDelete = action.payload.receivedValues
-          const newState = cashflow.filter(c => !itemsToDelete.includes(c.id))
-
-          state.cashflow = newState
         },
       },
     ),
   }),
-  selectors: {
-    selectCashflow: state => state.cashflow,
-  },
+  selectors: {},
 })
+
+export const { selectAll: selectAllCashflow } = casfhlowAdapter.getSelectors(
+  (state: RootState) => state.cashflow,
+)
 
 export const {
   paymentAdded,
@@ -326,7 +317,6 @@ export const {
   compensationSubmitted,
   deletedCashflowItems,
 } = cashflowSlice.actions
-export const { selectCashflow } = cashflowSlice.selectors
 export default cashflowSlice.reducer
 
 const returnPeriodId = (
@@ -335,13 +325,13 @@ const returnPeriodId = (
 ): FinancePeriod["id"] => periodId
 
 export const selectAllCashflowByPeriodId = createAppSelector(
-  [selectCashflow, returnPeriodId],
+  [selectAllCashflow, returnPeriodId],
   (cashflow, periodId: string): Cashflow =>
     cashflow.filter(c => c.period_id === periodId),
 )
 
 export const selectEarningsByPeriodId = createAppSelector(
-  [selectCashflow, returnPeriodId],
+  [selectAllCashflow, returnPeriodId],
   (earnings, periodId) =>
     earnings.filter(
       e => e.type === "income/profit" && e.period_id === periodId,
@@ -349,7 +339,7 @@ export const selectEarningsByPeriodId = createAppSelector(
 )
 
 export const selectAllPaymentsByPeriodId = createAppSelector(
-  [selectCashflow, returnPeriodId],
+  [selectAllCashflow, returnPeriodId],
   (payments, periodId) =>
     payments.filter(
       p =>
@@ -359,7 +349,7 @@ export const selectAllPaymentsByPeriodId = createAppSelector(
 )
 
 export const selectFixedPaymentsByPeriodId = createAppSelector(
-  [selectCashflow, returnPeriodId],
+  [selectAllCashflow, returnPeriodId],
   (payments, periodId) =>
     payments.filter(
       p => p.type === "payment/fixed" && p.period_id === periodId,
@@ -367,7 +357,7 @@ export const selectFixedPaymentsByPeriodId = createAppSelector(
 )
 
 export const selectVariablePaymentsByPeriodId = createAppSelector(
-  [selectCashflow, returnPeriodId],
+  [selectAllCashflow, returnPeriodId],
   (payments, periodId) =>
     payments.filter(
       p => p.type === "payment/variable" && p.period_id === periodId,
@@ -375,7 +365,7 @@ export const selectVariablePaymentsByPeriodId = createAppSelector(
 )
 
 export const selectAllStockCompensationsByPeriodId = createAppSelector(
-  [selectCashflow, returnPeriodId],
+  [selectAllCashflow, returnPeriodId],
   (cashflow, periodId) =>
     cashflow.filter(
       c => c.type === "income/stock" && c.period_id === periodId,
@@ -383,7 +373,7 @@ export const selectAllStockCompensationsByPeriodId = createAppSelector(
 )
 
 export const selectAllFPCompensationsByPeriodId = createAppSelector(
-  [selectCashflow, returnPeriodId],
+  [selectAllCashflow, returnPeriodId],
   (cashflow, periodId) =>
     cashflow.filter(
       c => c.type === "income/forward-payment" && c.period_id === periodId,

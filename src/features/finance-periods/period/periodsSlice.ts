@@ -609,9 +609,10 @@ export const periodsSlice = createAppSlice({
       ) => {
         const {
           periods: { entities },
-          cashflow: { cashflow },
+          cashflow: { entities: casfhlowEntities },
         } = getState() as RootState
 
+        const cashflow = Object.values(casfhlowEntities)
         const deletedTransactions = cashflow.filter(c =>
           deletedTransactionsIds.includes(c.id),
         )
@@ -629,23 +630,23 @@ export const periodsSlice = createAppSlice({
 
           switch (transaction.type) {
             case "income/profit":
-              sumOfTransactions.income += amount
+              sumOfTransactions.income -= amount
               break
             case "income/stock":
-              sumOfTransactions.stock += amount
+              sumOfTransactions.stock -= amount
               break
             case "income/forward-payment":
-              sumOfTransactions.forwardPayments += amount
+              sumOfTransactions.forwardPayments -= amount
               break
             case "payment/fixed":
             case "payment/variable":
               sumOfTransactions.spend += amount
               break
             case "compensation/stock":
-              sumOfTransactions.stock -= amount
+              sumOfTransactions.stock += amount
               break
             case "compensation/forward-payment":
-              sumOfTransactions.forwardPayments -= amount
+              sumOfTransactions.forwardPayments += amount
               break
             default:
               throw new Error(`Unknown transaction type: ${transaction.type}`)
@@ -663,8 +664,16 @@ export const periodsSlice = createAppSlice({
             const p = periods[i]
             const { income, spend, stock, forwardPayments } = sumOfTransactions
             const interimBalance = -income + spend
+            const positiveEndBalance =
+              p.end_balance + interimBalance + stock + forwardPayments
+            const negativeEndBalance =
+              p.end_balance + interimBalance - stock - forwardPayments
+            const isEndBalancePositive = p.end_balance > 0
             let newStartBalanceForPeriod = p.start_balance + interimBalance,
-              newEndBalanceForPeriod = p.end_balance + interimBalance,
+              // if the end_balance < 0, the number moves in the wrong way: -11 + 1 should return -12
+              newEndBalanceForPeriod = isEndBalancePositive
+                ? positiveEndBalance
+                : negativeEndBalance,
               newStock = p.stock + stock,
               newFP = p.forward_payments + forwardPayments
 
@@ -722,9 +731,8 @@ export const periodsSlice = createAppSlice({
   selectors: {},
 })
 
-export const { selectAll: selectAllPeriods } = periodsAdapter.getSelectors(
-  (state: RootState) => state.periods,
-)
+export const { selectAll: selectAllPeriods, selectById: selectPeriodById } =
+  periodsAdapter.getSelectors((state: RootState) => state.periods)
 
 export const {
   periodAdded,
@@ -744,12 +752,13 @@ const getId = (
   state: RootState,
   id: FinancePeriod["id"],
 ): FinancePeriod["id"] => id
+
 const getIndex = (state: RootState, index: number): number => index
 
-export const selectPeriodByIndex = createAppSelector(
-  [selectAllPeriods, getIndex],
-  (state, index) => state[index],
-)
+// export const selectPeriodById = createAppSelector(
+//   [selectAllPeriods, getId],
+//   (state, id) => state.find(p => p.id === id),
+// )
 
 export const selectPeriodStartDateByIndex = createAppSelector(
   [selectAllPeriods, getIndex],

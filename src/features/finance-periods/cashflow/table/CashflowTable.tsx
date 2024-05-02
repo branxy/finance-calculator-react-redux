@@ -22,10 +22,6 @@ const CashflowTable: FunctionComponent<CashflowTableProps> = ({
     CashflowItem["id"][]
   >([])
 
-  const lastSelectedTransaction =
-    selectedTransactions.length &&
-    selectedTransactions[selectedTransactions.length - 1]
-
   const isCheckedCheckbox =
     selectedTransactions.length === tableItems.length &&
     selectedTransactions.length > 0

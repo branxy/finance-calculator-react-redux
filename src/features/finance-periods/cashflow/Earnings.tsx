@@ -1,7 +1,6 @@
 import { type FunctionComponent } from "react"
 import type { FinancePeriod } from "../types"
 import AddTransaction from "./AddTransaction"
-import { type EarningsT } from "./Forecast"
 
 interface EarningsProps {
   periodId: FinancePeriod["id"]
