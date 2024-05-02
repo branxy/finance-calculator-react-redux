@@ -1,8 +1,8 @@
-import { getDaysBetweenTwoDates, getTodayDate } from "../../../utils"
-import type { Periods, FinancePeriod, CashflowItem, Cashflow } from "../types"
+import { getTodayDate } from "../../../utils"
+import type { Periods, FinancePeriod, CashflowItem } from "../types"
 import { v4 as uuidv4 } from "uuid"
 import { createAppSlice } from "../../../app/createAppSlice"
-import { createEntityAdapter, type PayloadAction } from "@reduxjs/toolkit"
+import { createEntityAdapter } from "@reduxjs/toolkit"
 import {
   uploadPeriod,
   updateStartDate,
@@ -14,42 +14,13 @@ import {
 import { type RootState } from "../../../app/store"
 import { createAppSelector } from "../../../app/hooks"
 
-const periodsAdapter = createEntityAdapter<FinancePeriod>()
-
-const initialState = periodsAdapter.getInitialState(
-  {
-    status: "idle",
-    error: null,
-  },
-  [
-    {
-      id: "1",
-      user_id: uuidv4(),
-      start_date: getTodayDate(),
-      start_balance: 0,
-      end_balance: 0,
-      stock: 6000,
-      forward_payments: 12000,
-    },
-  ],
-)
-
 interface InitialState {
   periods: Periods
   status: "idle" | "loading" | "succeeded" | "failed"
   error: string | null
 }
 
-interface ChangeStartDate {
-  periodId: FinancePeriod["id"]
-  newStartBalance: FinancePeriod["start_balance"]
-}
-
-interface DeletePeriod {
-  periodId: FinancePeriod["id"]
-}
-
-interface addPeriodProps {
+interface AddPeriodProps {
   prevPeriodId: FinancePeriod["id"]
   user_id: FinancePeriod["user_id"]
 }
@@ -70,11 +41,12 @@ interface ValueToUpdate {
 export type ValuesToUpdate = ValueToUpdate[]
 
 interface CompensationToUpdate {
-  periodId: FinancePeriod["id"]
-  periodIndex: number
-  savingType: "income/stock" | "income/forward-payment"
-  newStockStartAmount: CashflowItem["amount"]
-  newFPStartAmount: CashflowItem["amount"]
+  id: FinancePeriod["id"]
+  changes: {
+    stock: CashflowItem["amount"]
+    forward_payments: CashflowItem["amount"]
+  }
+  // savingType: "income/stock" | "income/forward-payment"
 }
 
 export type CompensationsToUpdate = CompensationToUpdate[]
@@ -85,33 +57,47 @@ export interface CompensationAmount {
 }
 
 interface PaymentSubmittedSingle {
-  periodId: FinancePeriod["id"]
-  periodIndex: number
-  newStartBalance: FinancePeriod["start_balance"]
-  newEndBalance: FinancePeriod["end_balance"]
-  newStockStart: FinancePeriod["stock"]
-  newFPStart: FinancePeriod["forward_payments"]
+  id: FinancePeriod["id"]
+  changes: {
+    start_balance: FinancePeriod["start_balance"]
+    end_balance: FinancePeriod["end_balance"]
+    stock: FinancePeriod["stock"]
+    forward_payments: FinancePeriod["forward_payments"]
+  }
 }
 
 export type PaymentSubmittedUpdates = PaymentSubmittedSingle[]
 
-export interface DeletedTransactionUpdate {
-  periodId: FinancePeriod["id"]
-  periodIndex: number
-  newStartBalance: FinancePeriod["start_balance"]
-  newEndBalance: FinancePeriod["end_balance"]
-  newStockStart: FinancePeriod["stock"]
-  newFPStart: FinancePeriod["forward_payments"]
-}
+export type DeletedTransactionUpdate = PaymentSubmittedSingle
 
 export type DeletedTransactionsUpdate = DeletedTransactionUpdate[]
+
+const periodsAdapter = createEntityAdapter<FinancePeriod>()
+
+const samplePeriod = {
+  id: "1",
+  user_id: uuidv4(),
+  start_date: getTodayDate(),
+  start_balance: 0,
+  end_balance: 0,
+  stock: 6000,
+  forward_payments: 12000,
+}
+
+const initialState = periodsAdapter.getInitialState(
+  {
+    status: "idle",
+    error: null,
+  },
+  [samplePeriod],
+)
 
 export const periodsSlice = createAppSlice({
   name: "periods",
   initialState,
   reducers: create => ({
     periodAdded: create.asyncThunk(
-      async ({ prevPeriodId, user_id }: addPeriodProps, { getState }) => {
+      async ({ prevPeriodId, user_id }: AddPeriodProps, { getState }) => {
         const state = getState() as RootState
 
         const prevPeriod = state.periods.entities[prevPeriodId]
@@ -146,7 +132,6 @@ export const periodsSlice = createAppSlice({
 
           const { newPeriod } = action.payload
           periodsAdapter.addOne(state, newPeriod)
-          // state.periods.push(action.payload.newPeriod)
         },
       },
     ),
@@ -155,16 +140,12 @@ export const periodsSlice = createAppSlice({
         { periodId, newStartDate }: ChangeStartDateProps,
         { getState },
       ) => {
-        // pass newStartDate prop to updateStartDate()
-
-        // delete this state call when you connect db, because it will return the required object and pass to reducer
         const {
           periods: { entities },
         } = getState() as RootState
         const currentPeriod = entities[periodId]
 
         if (currentPeriod) {
-          // periodId will be needed, when you use db
           const valueToUpdate = await updateStartDate({
             periodId,
             newStartDate,
@@ -185,9 +166,9 @@ export const periodsSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          // update current period start date
           const { periodId: id, newStartDate: start_date } =
             action.payload.valueToUpdate
+
           periodsAdapter.updateOne(state, { id, changes: { start_date } })
         },
       },
@@ -208,6 +189,7 @@ export const periodsSlice = createAppSlice({
         const {
           periods: { entities },
         } = getState() as RootState
+
         const periods = Object.values(entities)
         const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
         const currentPeriod = periods[currentPeriodIndex]
@@ -243,7 +225,6 @@ export const periodsSlice = createAppSlice({
             })
           }
 
-          // periodId will be needed, when you use db
           const periodsToUpdate = await updatePeriodsBalance(valuesToUpdate)
 
           return { periodsToUpdate }
@@ -261,40 +242,9 @@ export const periodsSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          // for every period that needs updating, update it
           const { periodsToUpdate } = action.payload
 
-          // const valuesToMapType: [string, ValueToUpdate][] =
-          //   periodsToUpdate.map(p => [p.periodId, p])
-          // const valuesMap = new Map(valuesToMapType)
-
           periodsAdapter.updateMany(state, periodsToUpdate)
-
-          // for (const property in entities) {
-          //   const p = entities[property]
-          //   const newValue = valuesMap.get(p.id)
-
-          //   if (newValue) {
-          //     const { newStartBalance, newEndBalance } = newValue
-
-          //     p.start_balance = newStartBalance
-          //     p.end_balance = newEndBalance
-          //   }
-          // }
-          // _______
-          // const updatedPeriods = periods.map(p => {
-          //   const newValue = valuesMap.get(p.id)
-
-          //   if (newValue) {
-          //     return {
-          //       ...p,
-          //       start_balance: newValue.newStartBalance,
-          //       end_balance: newValue.newEndBalance,
-          //     }
-          //   } else return p
-          // })
-
-          // state.periods = updatedPeriods
         },
       },
     ),
@@ -311,8 +261,6 @@ export const periodsSlice = createAppSlice({
         },
         { getState },
       ) => {
-        // just add the difference to current balance
-
         const {
           periods: { entities },
         } = getState() as RootState
@@ -346,10 +294,11 @@ export const periodsSlice = createAppSlice({
             }
 
             valuesToUpdate.push({
-              periodId: p.id,
-              periodIndex: i,
-              newStartBalance: newStartBalanceForPeriod,
-              newEndBalance: newEndBalanceForPeriod,
+              id: p.id,
+              changes: {
+                start_balance: newStartBalanceForPeriod,
+                end_balance: newEndBalanceForPeriod,
+              },
             })
           }
 
@@ -370,20 +319,9 @@ export const periodsSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          const { periods } = state
           const { newValues } = action.payload
-          const currentPeriodIndex = newValues[0].periodIndex
-          const map = new Map(newValues.map(p => [p.periodId, p]))
 
-          for (let i = currentPeriodIndex; i < periods.length; i++) {
-            const p = periods[i]
-            const newValue = map.get(p.id)
-
-            if (newValue) {
-              p.start_balance = newValue.newStartBalance
-              p.end_balance = newValue.newEndBalance
-            }
-          }
+          periodsAdapter.updateMany(state, newValues)
         },
       },
     ),
@@ -401,8 +339,10 @@ export const periodsSlice = createAppSlice({
         // assemble a record of all periods' balances that need to be updated and pass to updatePeriodsBalance()
 
         const {
-          periods: { periods },
+          periods: { entities },
         } = getState() as RootState
+
+        const periods = Object.values(entities)
         const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
         const currentPeriod = periods[currentPeriodIndex]
 
@@ -411,11 +351,10 @@ export const periodsSlice = createAppSlice({
 
           for (let i = currentPeriodIndex; i < periods.length; i++) {
             const p = periods[i]
-            let newStartBalanceForPeriod
+            let newStartBalanceForPeriod = p.start_balance
             let newEndBalanceForPeriod
 
             if (p.id === currentPeriod.id) {
-              newStartBalanceForPeriod = p.start_balance
               newEndBalanceForPeriod = p.end_balance - paymentAmount
             } else {
               newStartBalanceForPeriod = p.start_balance - paymentAmount
@@ -423,14 +362,14 @@ export const periodsSlice = createAppSlice({
             }
 
             valuesToUpdate.push({
-              periodId: p.id,
-              periodIndex: i,
-              newStartBalance: newStartBalanceForPeriod,
-              newEndBalance: newEndBalanceForPeriod,
+              id: p.id,
+              changes: {
+                start_balance: newStartBalanceForPeriod,
+                end_balance: newEndBalanceForPeriod,
+              },
             })
           }
 
-          // periodId will be needed, when you use db
           const periodsToUpdate: ValuesToUpdate =
             await updatePeriodsBalance(valuesToUpdate)
 
@@ -449,25 +388,9 @@ export const periodsSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          const { periods } = state
           const { periodsToUpdate } = action.payload
 
-          const valuesToMapType: [string, ValueToUpdate][] =
-            periodsToUpdate.map(p => [p.periodId, p])
-          const valuesMap = new Map(valuesToMapType)
-          const updatedPeriods = periods.map(p => {
-            const newValue = valuesMap.get(p.id)
-
-            if (newValue) {
-              return {
-                ...p,
-                start_balance: newValue.newStartBalance,
-                end_balance: newValue.newEndBalance,
-              }
-            } else return p
-          })
-
-          state.periods = updatedPeriods
+          periodsAdapter.updateMany(state, periodsToUpdate)
         },
       },
     ),
@@ -484,8 +407,10 @@ export const periodsSlice = createAppSlice({
       ) => {
         // this reducer is called inside the cashflowSlice's addIncome() reducer, when income is added
         const {
-          periods: { periods },
+          periods: { entities },
         } = getState() as RootState
+
+        const periods = Object.values(entities)
         const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
         const currentPeriod = periods[currentPeriodIndex]
 
@@ -495,21 +420,20 @@ export const periodsSlice = createAppSlice({
           for (let i = currentPeriodIndex; i < periods.length; i++) {
             const p = periods[i]
             let newStartBalanceForPeriod
-            let newEndBalanceForPeriod
+            let newEndBalanceForPeriod = p.end_balance + incomeAmount
 
             if (p.id === currentPeriod.id) {
               newStartBalanceForPeriod = p.start_balance
-              newEndBalanceForPeriod = p.end_balance + incomeAmount
             } else {
               newStartBalanceForPeriod = p.start_balance + incomeAmount
-              newEndBalanceForPeriod = p.end_balance + incomeAmount
             }
 
             valuesToUpdate.push({
-              periodId: p.id,
-              periodIndex: i,
-              newStartBalance: newStartBalanceForPeriod,
-              newEndBalance: newEndBalanceForPeriod,
+              id: p.id,
+              changes: {
+                start_balance: newStartBalanceForPeriod,
+                end_balance: newEndBalanceForPeriod,
+              },
             })
           }
 
@@ -531,25 +455,9 @@ export const periodsSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          const { periods } = state
           const { newPeriods } = action.payload
-          const currentIndex = periods.findIndex(
-            p => p.id === newPeriods[0].periodId,
-          )
 
-          const newPeriodsMap = new Map(newPeriods.map(p => [p.periodId, p]))
-
-          for (let i = currentIndex; i < periods.length; i++) {
-            const p = periods[i]
-            const newValue = newPeriodsMap.get(p.id)
-
-            if (newValue) {
-              const { newStartBalance, newEndBalance } = newValue
-
-              p.start_balance = newStartBalance
-              p.end_balance = newEndBalance
-            }
-          }
+          periodsAdapter.updateMany(state, newPeriods)
         },
       },
     ),
@@ -567,9 +475,10 @@ export const periodsSlice = createAppSlice({
         { getState },
       ) => {
         const {
-          periods: { periods },
+          periods: { entities },
         } = getState() as RootState
 
+        const periods = Object.values(entities)
         const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
         const currentPeriod = periods[currentPeriodIndex]
 
@@ -588,11 +497,11 @@ export const periodsSlice = createAppSlice({
             }
 
             valuesToUpdate.push({
-              periodId: p.id,
-              periodIndex: i,
-              savingType,
-              newStockStartAmount,
-              newFPStartAmount,
+              id: p.id,
+              changes: {
+                stock: newStockStartAmount,
+                forward_payments: newFPStartAmount,
+              },
             })
           }
 
@@ -613,25 +522,9 @@ export const periodsSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          const { periods } = state
           const { receivedValues } = action.payload
-          const currentIndex = periods.findIndex(
-            p => p.id === receivedValues[0].periodId,
-          )
 
-          const newValuesMap = new Map(receivedValues.map(p => [p.periodId, p]))
-
-          for (let i = currentIndex; i < periods.length; i++) {
-            const p = periods[i]
-            const newValue = newValuesMap.get(p.id)
-
-            if (newValue) {
-              const { newStockStartAmount, newFPStartAmount } = newValue
-
-              p.stock = newStockStartAmount
-              p.forward_payments = newFPStartAmount
-            }
-          }
+          periodsAdapter.updateMany(state, receivedValues)
         },
       },
     ),
@@ -647,8 +540,10 @@ export const periodsSlice = createAppSlice({
         { getState },
       ) => {
         const {
-          periods: { periods },
+          periods: { entities },
         } = getState() as RootState
+
+        const periods = Object.values(entities)
         const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
         const currentPeriod = periods[currentPeriodIndex]
         const compensationSum = compensationAmount.stock + compensationAmount.fp
@@ -658,27 +553,23 @@ export const periodsSlice = createAppSlice({
 
           for (let i = currentPeriodIndex; i < periods.length; i++) {
             const p = periods[i]
-            let newStartBalance, newEndBalance, newStockStart, newFPStart
+            let newStartBalance = p.start_balance + compensationSum,
+              newEndBalance = p.end_balance + compensationSum,
+              newStockStart = p.stock - compensationAmount.stock,
+              newFPStart = p.forward_payments - compensationAmount.fp
 
-            if (p.id === currentPeriod.id) {
+            if (i === currentPeriodIndex) {
               newStartBalance = p.start_balance
-              newEndBalance = p.end_balance + compensationSum
-              newStockStart = p.stock - compensationAmount.stock
-              newFPStart = p.forward_payments - compensationAmount.fp
-            } else {
-              newStartBalance = p.start_balance + compensationSum
-              newEndBalance = p.end_balance + compensationSum
-              newStockStart = p.stock - compensationAmount.stock
-              newFPStart = p.forward_payments - compensationAmount.fp
             }
 
             valuesToUpdate.push({
-              periodId: p.id,
-              periodIndex: i,
-              newStartBalance,
-              newEndBalance,
-              newStockStart,
-              newFPStart,
+              id: p.id,
+              changes: {
+                start_balance: newStartBalance,
+                end_balance: newEndBalance,
+                stock: newStockStart,
+                forward_payments: newFPStart,
+              },
             })
           }
 
@@ -699,37 +590,9 @@ export const periodsSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          const { periods } = state
           const { receivedValues } = action.payload
-          const currentIndex = periods.findIndex(
-            p => p.id === receivedValues[0].periodId,
-          )
 
-          const valuesToMap = new Map(
-            receivedValues.map((obj: PaymentSubmittedSingle) => [
-              obj.periodId,
-              obj,
-            ]),
-          )
-
-          for (let i = currentIndex; i < periods.length; i++) {
-            const p = periods[i]
-            const newValue = valuesToMap.get(p.id)
-
-            if (newValue) {
-              const {
-                newStartBalance,
-                newEndBalance,
-                newStockStart,
-                newFPStart,
-              } = newValue as PaymentSubmittedSingle
-
-              p.start_balance = newStartBalance
-              p.end_balance = newEndBalance
-              p.stock = newStockStart
-              p.forward_payments = newFPStart
-            }
-          }
+          periodsAdapter.updateMany(state, receivedValues)
         },
       },
     ),
@@ -745,7 +608,7 @@ export const periodsSlice = createAppSlice({
         { getState },
       ) => {
         const {
-          periods: { periods },
+          periods: { entities },
           cashflow: { cashflow },
         } = getState() as RootState
 
@@ -788,6 +651,8 @@ export const periodsSlice = createAppSlice({
               throw new Error(`Unknown transaction type: ${transaction.type}`)
           }
         }
+
+        const periods = Object.values(entities)
         const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
         const currentPeriod = periods[currentPeriodIndex]
 
@@ -798,28 +663,26 @@ export const periodsSlice = createAppSlice({
             const p = periods[i]
             const { income, spend, stock, forwardPayments } = sumOfTransactions
             const interimBalance = -income + spend
-            let newStartBalanceForPeriod,
+            let newStartBalanceForPeriod = p.start_balance + interimBalance,
               newEndBalanceForPeriod = p.end_balance + interimBalance,
               newStock = p.stock + stock,
               newFP = p.forward_payments + forwardPayments
 
-            if (p.id === currentPeriod.id) {
+            if (i === currentPeriodIndex) {
               newStartBalanceForPeriod = p.start_balance
-            } else {
-              newStartBalanceForPeriod = p.start_balance + interimBalance
             }
 
             valuesToUpdate.push({
-              periodId: p.id,
-              periodIndex: i,
-              newStartBalance: newStartBalanceForPeriod,
-              newEndBalance: newEndBalanceForPeriod,
-              newStockStart: newStock,
-              newFPStart: newFP,
+              id: p.id,
+              changes: {
+                start_balance: newStartBalanceForPeriod,
+                end_balance: newEndBalanceForPeriod,
+                stock: newStock,
+                forward_payments: newFP,
+              },
             })
           }
 
-          // periodId will be needed, when you use db
           const periodsToUpdate = await updateDeletedCashflow(valuesToUpdate)
 
           return { periodsToUpdate }
@@ -837,35 +700,9 @@ export const periodsSlice = createAppSlice({
         fulfilled: (state, action) => {
           state.status = "succeeded"
 
-          const { periods } = state
           const { periodsToUpdate } = action.payload
 
-          const currentIndex = periods.findIndex(
-            p => p.id === periodsToUpdate[0].periodId,
-          )
-
-          const periodsToUpdateMap = new Map(
-            periodsToUpdate.map(p => [p.periodId, p]),
-          )
-
-          for (let i = currentIndex; i < periods.length; i++) {
-            const p = periods[i]
-            const newValue = periodsToUpdateMap.get(p.id)
-
-            if (newValue) {
-              const {
-                newStartBalance,
-                newEndBalance,
-                newStockStart,
-                newFPStart,
-              } = newValue
-
-              p.start_balance = newStartBalance
-              p.end_balance = newEndBalance
-              p.stock = newStockStart
-              p.forward_payments = newFPStart
-            }
-          }
+          periodsAdapter.updateMany(state, periodsToUpdate)
         },
       },
     ),
@@ -882,10 +719,12 @@ export const periodsSlice = createAppSlice({
     }),
   }),
   extraReducers: builder => {},
-  selectors: {
-    selectPeriods: state => state.periods,
-  },
+  selectors: {},
 })
+
+export const { selectAll: selectAllPeriods } = periodsAdapter.getSelectors(
+  (state: RootState) => state.periods,
+)
 
 export const {
   periodAdded,
@@ -898,7 +737,7 @@ export const {
   compensationSubmittedFromCashflow,
   cashflowDeletedFromCashflow,
 } = periodsSlice.actions
-export const { selectPeriods } = periodsSlice.selectors
+
 export default periodsSlice.reducer
 
 const getId = (
@@ -908,11 +747,11 @@ const getId = (
 const getIndex = (state: RootState, index: number): number => index
 
 export const selectPeriodByIndex = createAppSelector(
-  [selectPeriods, getIndex],
+  [selectAllPeriods, getIndex],
   (state, index) => state[index],
 )
 
 export const selectPeriodStartDateByIndex = createAppSelector(
-  [selectPeriods, getIndex],
+  [selectAllPeriods, getIndex],
   (state, index) => state[index]?.start_date,
 )

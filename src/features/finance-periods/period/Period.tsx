@@ -1,5 +1,4 @@
 import { useState, type FunctionComponent } from "react"
-import type { FinancePeriod } from "../types"
 import { useAppDispatch, useAppSelector } from "../../../app/hooks"
 import {
   periodAdded,
@@ -8,8 +7,6 @@ import {
   startDateChanged,
 } from "./periodsSlice"
 import Dropdown from "../../../components/Dropdown"
-import AddTransaction from "../cashflow/AddTransaction"
-import Payments from "../cashflow/Payments"
 import Forecast, {
   type FixedPaymentsT,
   type EarningsT,
@@ -22,7 +19,6 @@ import {
   selectFixedPaymentsByPeriodId,
   selectVariablePaymentsByPeriodId,
 } from "../cashflow/cashflowSlice"
-import Earnings from "../cashflow/Earnings"
 import "./Period.css"
 import DaysToNewPeriod from "./DaysToNewPeriod"
 import AllTransactions from "../cashflow/AllTransactions"
@@ -35,7 +31,6 @@ interface PeriodProps {
 const Period: FunctionComponent<PeriodProps> = props => {
   const { index, daysToNewPeriod } = props
   const [isEditingStartDate, setIsEditingStartDate] = useState(false)
-  const period = useAppSelector(state => selectPeriodByIndex(state, index))
   const {
     id,
     user_id,
@@ -44,7 +39,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
     end_balance,
     stock,
     forward_payments,
-  } = period
+  } = useAppSelector(state => selectPeriodByIndex(state, index))
   const earnings = useAppSelector(state =>
     selectEarningsByPeriodId(state, id),
   ) as EarningsT

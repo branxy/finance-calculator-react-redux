@@ -1,11 +1,11 @@
 import "./App.css"
 import { useAppSelector } from "./app/hooks"
 import Period from "./features/finance-periods/period/Period"
-import { selectPeriods } from "./features/finance-periods/period/periodsSlice"
+import { selectAllPeriods } from "./features/finance-periods/period/periodsSlice"
 import { getDaysBetweenTwoDates } from "./utils"
 
 const App = () => {
-  const financePeriods = useAppSelector(selectPeriods)
+  const financePeriods = useAppSelector(selectAllPeriods)
 
   const periods = financePeriods.map((period, i, arr) => {
     const daysToNewPeriod = getDaysBetweenTwoDates(
