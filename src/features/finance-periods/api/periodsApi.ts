@@ -26,14 +26,18 @@ export async function uploadPeriod(
   return new Promise(resolve => resolve(newPeriod))
 }
 
-export async function updateStartDate(
-  periodId: FinancePeriod["id"],
-  newStartDate: FinancePeriod["start_date"],
-  period: FinancePeriod,
-): Promise<FinancePeriod> {
-  const updatedPeriod = { ...period, start_date: newStartDate }
+interface updateStartDatePropsAndReturnValue {
+  periodId: FinancePeriod["id"]
+  newStartDate: FinancePeriod["start_date"]
+}
 
-  return new Promise(resolve => resolve(updatedPeriod))
+export async function updateStartDate({
+  periodId,
+  newStartDate,
+}: updateStartDatePropsAndReturnValue): Promise<updateStartDatePropsAndReturnValue> {
+  const returnValue = { periodId, newStartDate }
+
+  return new Promise(resolve => resolve(returnValue))
 }
 
 export async function updatePeriodsBalance(
