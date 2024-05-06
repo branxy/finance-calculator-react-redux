@@ -1,8 +1,11 @@
 import { useState, type FunctionComponent } from "react"
 import type { CashflowItem, FinancePeriod } from "../types"
-import { useAppDispatch } from "../../../app/hooks"
+import { useAppDispatch, useAppSelector } from "../../../app/hooks"
 import "./Forecast.css"
-import { compensationSubmitted } from ".././cashflow/cashflowSlice"
+import {
+  compensationSubmitted,
+  selectSumOfStockAndFPCompensationsByPeriodId,
+} from ".././cashflow/cashflowSlice"
 
 export type EarningsT = {
   id: CashflowItem["id"]
@@ -69,7 +72,9 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   const [submittedStockCompensation, setSubmittedStockCompensation] =
     useState(0)
   const [submittedFPCompensation, setSubmittedFPCompensation] = useState(0)
-
+  const [sumOfStockCompensations, sumOfFPCompensations] = useAppSelector(
+    state => selectSumOfStockAndFPCompensationsByPeriodId(state, periodId),
+  )
   const compensationSum = sumToCompensateStock + sumToCompensateForwardPayments
   const shortage = end_balance < 0 ? Math.abs(end_balance) : 0
   const compensationError =
@@ -77,7 +82,7 @@ const Forecast: FunctionComponent<ForecastProps> = ({
 
   const totalIncome = earnings.reduce((sum, x) => sum + x.amount, 0)
 
-  const compensations = `${submittedStockCompensation > 0 ? ` + ${submittedStockCompensation} (НЗ)` : ""}${submittedFPCompensation > 0 ? ` + ${submittedFPCompensation} (ОП)` : ""}`
+  const compensations = `${sumOfStockCompensations > 0 ? ` + ${sumOfStockCompensations} (НЗ)` : ""}${sumOfFPCompensations > 0 ? ` + ${sumOfFPCompensations} (ОП)` : ""}`
 
   const error = compensationError && (
     <span className="error">Сумма компенсации превышает сумму недостатка</span>

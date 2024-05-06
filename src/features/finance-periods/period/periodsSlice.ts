@@ -128,10 +128,10 @@ export const periodsSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
-          state.status = "succeeded"
-
           const { newPeriod } = action.payload
           periodsAdapter.addOne(state, newPeriod)
+
+          state.status = "succeeded"
         },
       },
     ),
@@ -164,12 +164,12 @@ export const periodsSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
-          state.status = "succeeded"
-
           const { periodId: id, newStartDate: start_date } =
             action.payload.valueToUpdate
 
           periodsAdapter.updateOne(state, { id, changes: { start_date } })
+
+          state.status = "succeeded"
         },
       },
     ),
@@ -240,11 +240,10 @@ export const periodsSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
-          state.status = "succeeded"
-
           const { periodsToUpdate } = action.payload
-
           periodsAdapter.updateMany(state, periodsToUpdate)
+
+          state.status = "succeeded"
         },
       },
     ),
@@ -317,11 +316,10 @@ export const periodsSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
-          state.status = "succeeded"
-
           const { newValues } = action.payload
-
           periodsAdapter.updateMany(state, newValues)
+
+          state.status = "succeeded"
         },
       },
     ),
@@ -386,11 +384,10 @@ export const periodsSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
-          state.status = "succeeded"
-
           const { periodsToUpdate } = action.payload
-
           periodsAdapter.updateMany(state, periodsToUpdate)
+
+          state.status = "succeeded"
         },
       },
     ),
@@ -453,11 +450,10 @@ export const periodsSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
-          state.status = "succeeded"
-
           const { newPeriods } = action.payload
-
           periodsAdapter.updateMany(state, newPeriods)
+
+          state.status = "succeeded"
         },
       },
     ),
@@ -520,11 +516,10 @@ export const periodsSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
-          state.status = "succeeded"
-
           const { receivedValues } = action.payload
-
           periodsAdapter.updateMany(state, receivedValues)
+
+          state.status = "succeeded"
         },
       },
     ),
@@ -588,11 +583,10 @@ export const periodsSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
-          state.status = "succeeded"
-
           const { receivedValues } = action.payload
-
           periodsAdapter.updateMany(state, receivedValues)
+
+          state.status = "succeeded"
         },
       },
     ),
@@ -620,8 +614,10 @@ export const periodsSlice = createAppSlice({
         const sumOfTransactions = {
           income: 0,
           spend: 0,
-          stock: 0,
-          forwardPayments: 0,
+          stockIncome: 0,
+          stockSpent: 0,
+          forwardPaymentsIncome: 0,
+          forwardPaymentsSpent: 0,
         }
 
         for (let i = 0; i < deletedTransactions.length; i++) {
@@ -633,20 +629,20 @@ export const periodsSlice = createAppSlice({
               sumOfTransactions.income -= amount
               break
             case "income/stock":
-              sumOfTransactions.stock -= amount
+              sumOfTransactions.stockIncome += amount
               break
             case "income/forward-payment":
-              sumOfTransactions.forwardPayments -= amount
+              sumOfTransactions.forwardPaymentsIncome += amount
               break
             case "payment/fixed":
             case "payment/variable":
               sumOfTransactions.spend += amount
               break
             case "compensation/stock":
-              sumOfTransactions.stock += amount
+              sumOfTransactions.stockSpent += amount
               break
             case "compensation/forward-payment":
-              sumOfTransactions.forwardPayments += amount
+              sumOfTransactions.forwardPaymentsSpent += amount
               break
             default:
               throw new Error(`Unknown transaction type: ${transaction.type}`)
@@ -662,20 +658,24 @@ export const periodsSlice = createAppSlice({
 
           for (let i = currentPeriodIndex; i < periods.length; i++) {
             const p = periods[i]
-            const { income, spend, stock, forwardPayments } = sumOfTransactions
+            const {
+              income,
+              spend,
+              stockIncome,
+              stockSpent,
+              forwardPaymentsIncome,
+              forwardPaymentsSpent,
+            } = sumOfTransactions
             const interimBalance = -income + spend
-            const positiveEndBalance =
-              p.end_balance + interimBalance + stock + forwardPayments
-            const negativeEndBalance =
-              p.end_balance + interimBalance - stock - forwardPayments
-            const isEndBalancePositive = p.end_balance > 0
+            const submittedSavings = stockSpent + forwardPaymentsSpent
             let newStartBalanceForPeriod = p.start_balance + interimBalance,
-              // if the end_balance < 0, the number moves in the wrong way: -11 + 1 should return -12
-              newEndBalanceForPeriod = isEndBalancePositive
-                ? positiveEndBalance
-                : negativeEndBalance,
-              newStock = p.stock + stock,
-              newFP = p.forward_payments + forwardPayments
+              newEndBalanceForPeriod =
+                p.end_balance + interimBalance - submittedSavings,
+              newStock = p.stock - stockIncome + stockSpent,
+              newFP =
+                p.forward_payments -
+                forwardPaymentsIncome +
+                forwardPaymentsSpent
 
             if (i === currentPeriodIndex) {
               newStartBalanceForPeriod = p.start_balance
@@ -707,11 +707,10 @@ export const periodsSlice = createAppSlice({
           state.status = "failed"
         },
         fulfilled: (state, action) => {
-          state.status = "succeeded"
-
           const { periodsToUpdate } = action.payload
-
           periodsAdapter.updateMany(state, periodsToUpdate)
+
+          state.status = "succeeded"
         },
       },
     ),

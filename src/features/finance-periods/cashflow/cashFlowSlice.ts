@@ -364,12 +364,24 @@ export const selectVariablePaymentsByPeriodId = createAppSelector(
     ),
 )
 
-export const selectAllStockCompensationsByPeriodId = createAppSelector(
+export const selectSumOfStockAndFPCompensationsByPeriodId = createAppSelector(
   [selectAllCashflow, returnPeriodId],
-  (cashflow, periodId) =>
-    cashflow.filter(
-      c => c.type === "income/stock" && c.period_id === periodId,
-    ) as StockCompensations,
+  (cashflow, periodId): [number, number] => {
+    let sumofStockCompensations = 0,
+      sumOfFPCompensations = 0
+
+    for (const c of cashflow) {
+      if (c.period_id === periodId) {
+        if (c.type === "compensation/stock") {
+          sumofStockCompensations += c.amount
+        } else if (c.type === "compensation/forward-payment") {
+          sumOfFPCompensations += c.amount
+        }
+      }
+    }
+
+    return [sumofStockCompensations, sumOfFPCompensations]
+  },
 )
 
 export const selectAllFPCompensationsByPeriodId = createAppSelector(
