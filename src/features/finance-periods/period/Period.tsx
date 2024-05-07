@@ -1,10 +1,9 @@
-import { useState, type FunctionComponent } from "react"
+import { type FunctionComponent } from "react"
 import { useAppDispatch, useAppSelector } from "../../../app/hooks"
 import {
   periodAdded,
   selectPeriodById,
   startBalanceChanged,
-  startDateChanged,
 } from "./periodsSlice"
 import Dropdown from "../../../components/Dropdown"
 import Forecast, {
@@ -23,14 +22,7 @@ import {
 import DaysToNewPeriod from "./DaysToNewPeriod"
 import AllTransactions from "../cashflow/AllTransactions"
 import type { FinancePeriod } from "../types"
-import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Separator,
-  TextField,
-} from "@radix-ui/themes"
+import { Box, Button, Flex, Separator, TextField } from "@radix-ui/themes"
 import PeriodHeader from "./PeriodHeader"
 
 interface PeriodProps {

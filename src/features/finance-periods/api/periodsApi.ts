@@ -63,3 +63,9 @@ export async function updateDeletedCashflow(
 ): Promise<DeletedTransactionsUpdate> {
   return new Promise(resolve => resolve(valuesToUpdate))
 }
+
+export async function deletePeriodFromDB(
+  periodId: FinancePeriod["id"],
+): Promise<FinancePeriod["id"]> {
+  return new Promise(resolve => resolve(periodId))
+}

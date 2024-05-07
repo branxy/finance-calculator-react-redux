@@ -2,7 +2,7 @@ import { Button, DropdownMenu, Flex, Heading } from "@radix-ui/themes"
 import { useState, type FunctionComponent } from "react"
 import type { FinancePeriod } from "../types"
 import { useAppDispatch, useAppSelector } from "../../../app/hooks"
-import { startDateChanged } from "./periodsSlice"
+import { deletedPeriod, startDateChanged } from "./periodsSlice"
 import { selectAllCashflowByPeriodId } from "../cashflow/cashflowSlice"
 
 interface PeriodHeaderProps {
@@ -40,7 +40,7 @@ const PeriodHeader: FunctionComponent<PeriodHeaderProps> = ({
   }
 
   function handleDeletePeriod() {
-    //
+    dispatch(deletedPeriod(id))
   }
 
   return (

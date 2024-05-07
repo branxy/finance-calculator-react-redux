@@ -271,9 +271,11 @@ export const cashflowSlice = createAppSlice({
       async (
         {
           periodId,
+          currentPeriodWasDeleted,
           selectedTransactions,
         }: {
           periodId: FinancePeriod["id"]
+          currentPeriodWasDeleted: boolean
           selectedTransactions: CashflowItem["id"][]
         },
         { dispatch },
@@ -281,6 +283,7 @@ export const cashflowSlice = createAppSlice({
         dispatch(
           cashflowDeletedFromCashflow({
             periodId,
+            currentPeriodWasDeleted,
             deletedTransactionsIds: selectedTransactions,
           }),
         )
@@ -302,6 +305,25 @@ export const cashflowSlice = createAppSlice({
         },
       },
     ),
+    deletedPeriodCashflow: create.asyncThunk(
+      async (periodId: CashflowItem["period_id"]) => {
+        // delete all casfhlow items with provided periodId
+      },
+      {
+        pending: state => {
+          state.status = "loading"
+        },
+        rejected: (state, action) => {
+          state.status = "failed"
+        },
+        fulfilled: (state, action) => {
+          const itemsToDelete = action.payload
+          // casfhlowAdapter.removeMany(state, itemsToDelete)
+
+          state.status = "succeeded"
+        },
+      },
+    ),
   }),
   selectors: {},
 })
@@ -316,6 +338,7 @@ export const {
   incomeAdded,
   compensationSubmitted,
   deletedCashflowItems,
+  deletedPeriodCashflow,
 } = cashflowSlice.actions
 export default cashflowSlice.reducer
 

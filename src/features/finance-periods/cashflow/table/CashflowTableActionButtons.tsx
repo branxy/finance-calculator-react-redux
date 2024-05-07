@@ -17,7 +17,13 @@ const CashflowTableActionButtons: FunctionComponent<
   const noRowsSelected = selectedTransactions.length === 0
 
   function handleDeleteCashflowItems() {
-    dispatch(deletedCashflowItems({ periodId, selectedTransactions }))
+    dispatch(
+      deletedCashflowItems({
+        periodId,
+        currentPeriodWasDeleted: false,
+        selectedTransactions,
+      }),
+    )
     setSelectedTransactions([])
   }
   return (

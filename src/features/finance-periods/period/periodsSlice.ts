@@ -10,9 +10,14 @@ import {
   updateCompensation,
   uploadNewSavings,
   updateDeletedCashflow,
+  deletePeriodFromDB,
 } from "../api/periodsApi"
 import { type RootState } from "../../../app/store"
 import { createAppSelector } from "../../../app/hooks"
+import {
+  deletedCashflowItems,
+  deletedPeriodCashflow,
+} from "../cashflow/cashflowSlice"
 
 interface InitialState {
   periods: Periods
@@ -594,9 +599,11 @@ export const periodsSlice = createAppSlice({
       async (
         {
           periodId,
+          currentPeriodWasDeleted,
           deletedTransactionsIds,
         }: {
           periodId: FinancePeriod["id"]
+          currentPeriodWasDeleted: boolean
           deletedTransactionsIds: CashflowItem["id"][]
         },
         { getState },
@@ -652,11 +659,14 @@ export const periodsSlice = createAppSlice({
         const periods = Object.values(entities)
         const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
         const currentPeriod = periods[currentPeriodIndex]
+        const indexToStartFrom = currentPeriodWasDeleted
+          ? currentPeriodIndex + 1
+          : currentPeriodIndex
 
         if (currentPeriod) {
           const valuesToUpdate: DeletedTransactionsUpdate = []
 
-          for (let i = currentPeriodIndex; i < periods.length; i++) {
+          for (let i = indexToStartFrom; i < periods.length; i++) {
             const p = periods[i]
             const {
               income,
@@ -714,17 +724,49 @@ export const periodsSlice = createAppSlice({
         },
       },
     ),
-    deletedPeriod: create.asyncThunk((periodId: FinancePeriod["id"]) => {}, {
-      pending: state => {
-        state.status = "loading"
+    deletedPeriod: create.asyncThunk(
+      async (periodId: FinancePeriod["id"], { getState, dispatch }) => {
+        // A period was deleted. Dispatch an action to cashflowSlice delete all period cashflow.
+        // Recalculate next periods' balance
+
+        const {
+          periods: { entities: periodEntities },
+          cashflow: { entities: casfhlowEntities },
+        } = getState() as RootState
+
+        const cashflow = Object.values(casfhlowEntities)
+        const cashflowToDelete = cashflow.reduce((table, c) => {
+          if (c.period_id === periodId) {
+            table.push(c.id)
+          }
+
+          return table
+        }, [] as string[])
+
+        dispatch(
+          deletedCashflowItems({
+            periodId,
+            currentPeriodWasDeleted: true,
+            selectedTransactions: cashflowToDelete,
+          }),
+        )
+
+        const receivedValue = await deletePeriodFromDB(periodId)
+        return receivedValue
       },
-      rejected: (state, action) => {
-        state.status = "failed"
+      {
+        pending: state => {
+          state.status = "loading"
+        },
+        rejected: (state, action) => {
+          state.status = "failed"
+        },
+        fulfilled: (state, action) => {
+          periodsAdapter.removeOne(state, action.payload)
+          state.status = "succeeded"
+        },
       },
-      fulfilled: (state, action) => {
-        state.status = "succeeded"
-      },
-    }),
+    ),
   }),
   extraReducers: builder => {},
   selectors: {},
@@ -743,6 +785,7 @@ export const {
   savingsAddedFromCashflow,
   compensationSubmittedFromCashflow,
   cashflowDeletedFromCashflow,
+  deletedPeriod,
 } = periodsSlice.actions
 
 export default periodsSlice.reducer
