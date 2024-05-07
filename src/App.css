@@ -1,4 +1,8 @@
-.payments-content {
+.App {
+  padding: 0 20px 32px 20px;
+}
+
+/* .payments-content {
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
@@ -22,4 +26,11 @@
   .payments-list {
     flex-direction: column;
   }
+} */
+
+input[type="date"] {
+  height: 30px;
+  border-color: rgba(128, 128, 128, 0.2);
+  border-radius: 3px;
+  padding: 0 4px;
 }

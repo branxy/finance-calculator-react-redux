@@ -2,6 +2,7 @@ import { type FunctionComponent } from "react"
 import type { CashflowItem, FinancePeriod } from "../../types"
 import { useAppDispatch } from "../../../../app/hooks"
 import { deletedCashflowItems } from "../cashflowSlice"
+import { Button } from "@radix-ui/themes"
 
 interface CashflowTableActionButtonsProps {
   periodId: FinancePeriod["id"]
@@ -21,13 +22,13 @@ const CashflowTableActionButtons: FunctionComponent<
   }
   return (
     <div className="action-btns">
-      <button
-        className="delete"
+      <Button
+        variant="surface"
         disabled={noRowsSelected}
         onClick={handleDeleteCashflowItems}
       >
         <span className="material-symbols-outlined">delete</span>
-      </button>
+      </Button>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { type FunctionComponent } from "react"
 import type { FinancePeriod } from "../types"
 import AddTransaction from "./AddTransaction"
+import { Heading } from "@radix-ui/themes"
 
 interface FixedPaymentsProps {
   periodId: FinancePeriod["id"]
@@ -17,7 +18,9 @@ const Payments: FunctionComponent<FixedPaymentsProps> = ({
 }) => {
   return (
     <div className="payments">
-      <h4>Расходы</h4>
+      <Heading as="h4" size="3">
+        Расходы
+      </Heading>
       <AddTransaction
         periodId={periodId}
         transactionType="outcome"

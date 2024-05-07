@@ -1,5 +1,6 @@
 import { type FunctionComponent, type ReactNode, useState } from "react"
 import "./Dropdown.css"
+import { Box, Button, Flex, Heading } from "@radix-ui/themes"
 
 interface DropdownProps {
   children: ReactNode
@@ -15,10 +16,17 @@ const Dropdown: FunctionComponent<DropdownProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(isOpenByDefault)
   return (
     <div className={`dropdown ${isDropdownOpen ? "open" : "closed"}`}>
-      <div className="header">
-        <h3 onClick={() => setIsDropdownOpen(!isDropdownOpen)}>{title}</h3>
-        <button
-          className="toggle"
+      <Flex justify="between" align="center" width="100%" className="title">
+        <Heading
+          as="h3"
+          size="5"
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        >
+          {title}
+        </Heading>
+        <Button
+          variant="ghost"
+          mr="1"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         >
           {isDropdownOpen ? (
@@ -26,9 +34,9 @@ const Dropdown: FunctionComponent<DropdownProps> = ({
           ) : (
             <span className="material-symbols-outlined">chevron_right</span>
           )}
-        </button>
-      </div>
-      <div className="content">{isDropdownOpen && children}</div>
+        </Button>
+      </Flex>
+      <Flex mt="4">{isDropdownOpen && children}</Flex>
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { Flex, Heading } from "@radix-ui/themes"
 import "./App.css"
 import { useAppSelector } from "./app/hooks"
 import Period from "./features/finance-periods/period/Period"
@@ -24,8 +25,12 @@ const App = () => {
 
   return (
     <div className="App">
-      <h1>Finance tracker</h1>
-      {periods}
+      <Flex direction="column" align="start" >
+        <Heading as="h1" size="7" mt="4">
+          Finance tracker
+        </Heading>
+        {periods}
+      </Flex>
     </div>
   )
 }

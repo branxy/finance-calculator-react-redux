@@ -19,10 +19,19 @@ import {
   selectFixedPaymentsByPeriodId,
   selectVariablePaymentsByPeriodId,
 } from "../cashflow/cashflowSlice"
-import "./Period.css"
+
 import DaysToNewPeriod from "./DaysToNewPeriod"
 import AllTransactions from "../cashflow/AllTransactions"
 import type { FinancePeriod } from "../types"
+import {
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Separator,
+  TextField,
+} from "@radix-ui/themes"
+import PeriodHeader from "./PeriodHeader"
 
 interface PeriodProps {
   id: FinancePeriod["id"]
@@ -40,8 +49,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
     stock,
     forward_payments,
   } = useAppSelector(state => selectPeriodById(state, id))
-
-  const [isEditingStartDate, setIsEditingStartDate] = useState(false)
+  const dispatch = useAppDispatch()
 
   const earnings = useAppSelector(state =>
     selectEarningsByPeriodId(state, id),
@@ -56,7 +64,6 @@ const Period: FunctionComponent<PeriodProps> = props => {
   const variablePayments = useAppSelector(state =>
     selectVariablePaymentsByPeriodId(state, id),
   ) as VariablePaymentsT
-  const dispatch = useAppDispatch()
 
   const fixedPaymentsSum = fixedPayments.reduce((sum, x) => {
     return sum + x.amount
@@ -82,87 +89,65 @@ const Period: FunctionComponent<PeriodProps> = props => {
     }
   }
 
-  function handleStartDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    dispatch(
-      startDateChanged({
-        periodId: id,
-        newStartDate: e.target.value,
-      }),
-    )
-  }
-
-  function handleStartDateKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      setIsEditingStartDate(!isEditingStartDate)
-    }
-  }
-
-  function handleEditStartDate() {
-    setIsEditingStartDate(!isEditingStartDate)
-  }
-
   return (
-    <div className="period">
-      <div className="period-title">
-        {isEditingStartDate ? (
-          <input
-            type="date"
-            defaultValue={start_date}
-            onChange={handleStartDateChange}
-            onKeyDown={handleStartDateKeyDown}
-            onBlur={() => setIsEditingStartDate(false)}
-            autoFocus={isEditingStartDate}
-          />
-        ) : (
-          <h2 className="title" onClick={handleEditStartDate}>
-            {start_date}
-          </h2>
-        )}
-      </div>
-      <div className="balance">
-        <span>Стартовый баланс: </span>
-        {index === 0 ? (
-          <input
-            type="number"
-            name="start-balance"
-            value={start_balance}
-            min="1"
-            onFocus={e => e.target.select()}
-            onChange={handleStartBalanceChange}
-          />
-        ) : (
-          <span>{start_balance} руб.</span>
-        )}
-      </div>
-      <DaysToNewPeriod periodIndex={index} daysToNewPeriod={daysToNewPeriod} />
-      <Dropdown title="Оборот" isOpenByDefault={true}>
-        <AllTransactions
-          periodId={id}
+    <>
+      {index > 0 && <Separator size="4" mt="4" />}
+      <Flex direction="column" gap="2" mt="6" width="100%">
+        <PeriodHeader id={id} start_date={start_date} />
+        <Flex align="center" gap="2">
+          <label htmlFor="start-balance">Стартовый баланс: </label>
+          {index === 0 ? (
+            <Box maxWidth="250px">
+              <TextField.Root
+                type="number"
+                name="start-balance"
+                id="start-balance"
+                value={start_balance || ""}
+                min="1"
+                onFocus={e => e.target.select()}
+                onChange={handleStartBalanceChange}
+                placeholder="0 руб."
+              />
+            </Box>
+          ) : (
+            <span>{start_balance} руб.</span>
+          )}
+        </Flex>
+        <DaysToNewPeriod
           periodIndex={index}
-          earnings={earnings}
-          end_balance={end_balance}
-          allPayments={allPayments}
-          fixedPaymentsSum={fixedPaymentsSum}
-          variablePaymentsSum={variablePaymentsSum}
-          fixedPaymentsLength={fixedPayments.length}
-          variablePaymentsLength={variablePayments.length}
+          daysToNewPeriod={daysToNewPeriod}
         />
-      </Dropdown>
-      <Forecast
-        periodId={id}
-        start_balance={start_balance}
-        end_balance={end_balance}
-        earnings={earnings}
-        stock={stock}
-        forwardPayments={forward_payments}
-        fixedPayments={fixedPaymentsSum}
-        variablePayments={variablePaymentsSum}
-      />
-      <button onClick={handleAddFinancePeriod}>
-        <span className="material-symbols-outlined">add</span>
-        <span>Добавить период</span>
-      </button>
-    </div>
+        <Dropdown title="Оборот" isOpenByDefault={true}>
+          <AllTransactions
+            periodId={id}
+            periodIndex={index}
+            earnings={earnings}
+            end_balance={end_balance}
+            allPayments={allPayments}
+            fixedPaymentsSum={fixedPaymentsSum}
+            variablePaymentsSum={variablePaymentsSum}
+            fixedPaymentsLength={fixedPayments.length}
+            variablePaymentsLength={variablePayments.length}
+          />
+        </Dropdown>
+        <Forecast
+          periodId={id}
+          start_balance={start_balance}
+          end_balance={end_balance}
+          earnings={earnings}
+          stock={stock}
+          forwardPayments={forward_payments}
+          fixedPayments={fixedPaymentsSum}
+          variablePayments={variablePaymentsSum}
+        />
+        <div className="div">
+          <Button size="3" onClick={handleAddFinancePeriod}>
+            <span className="material-symbols-outlined">add</span>
+            <span>Добавить период</span>
+          </Button>
+        </div>
+      </Flex>
+    </>
   )
 }
 

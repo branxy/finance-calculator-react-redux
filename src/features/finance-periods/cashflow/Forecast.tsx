@@ -6,6 +6,7 @@ import {
   compensationSubmitted,
   selectSumOfStockAndFPCompensationsByPeriodId,
 } from ".././cashflow/cashflowSlice"
+import { Box, Button, Flex, TextField } from "@radix-ui/themes"
 
 export type EarningsT = {
   id: CashflowItem["id"]
@@ -133,53 +134,58 @@ const Forecast: FunctionComponent<ForecastProps> = ({
       </span>
       <span className="shortage">Недостаток: {shortage} руб.</span>
       <div className="compensation" id="compensation">
-        <span>Способ возмещения:</span>
+        <span>Резервы:</span>
         <form
           onSubmit={e => {
             e.preventDefault()
             handleSubmitCompensation()
           }}
         >
-          <div className="item">
+          <Flex className="item">
             <label htmlFor="stock">НЗ: {stock} руб.</label>
             {stock > 0 && (
-              <input
-                type="number"
-                name="stock"
-                value={sumToCompensateStock}
-                className={`${classError}`}
-                min="0"
-                max={stock}
-                onFocus={e => e.target.select()}
-                onChange={handleSelectCompensation}
-              />
+              <Box flexGrow="1" maxWidth="120px">
+                <TextField.Root
+                  type="number"
+                  name="stock"
+                  value={sumToCompensateStock}
+                  color={compensationError ? "red" : "green"}
+                  min="0"
+                  max={stock}
+                  onFocus={e => e.target.select()}
+                  onChange={handleSelectCompensation}
+                />
+              </Box>
             )}
-          </div>
-          <div className="item">
+          </Flex>
+          <Flex gap="2">
             <label htmlFor="forward-payments">
               Отложенные платежи: {forwardPayments} руб.
             </label>
             {forwardPayments > 0 && (
-              <input
-                type="number"
-                name="forward-payments"
-                min="0"
-                max={forwardPayments}
-                value={sumToCompensateForwardPayments}
-                className={`${classError}`}
-                onFocus={e => e.target.select()}
-                onChange={handleSelectCompensation}
-              />
+              <Box flexGrow="1" maxWidth="120px">
+                <TextField.Root
+                  type="number"
+                  name="forward-payments"
+                  id="forward-payments"
+                  min="0"
+                  max={forwardPayments}
+                  value={sumToCompensateForwardPayments}
+                  onFocus={e => e.target.select()}
+                  onChange={handleSelectCompensation}
+                />
+              </Box>
             )}
-          </div>
-          {error}
-          <button
+          </Flex>
+          <p>{error}</p>
+          <Button
             type="submit"
+            variant="outline"
             onClick={handleSubmitCompensation}
             disabled={!(compensationSum > 0) || compensationError}
           >
             Внести компенсацию
-          </button>
+          </Button>
         </form>
       </div>
     </div>

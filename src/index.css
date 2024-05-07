@@ -17,9 +17,9 @@ body,
 
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  padding: 0 20px 20px 20px;
+  /* padding: 20px; */
 }
-
+/* 
 h1 {
   margin-top: 30px;
 }
@@ -30,9 +30,9 @@ h2 {
 
 h3 {
   margin-top: 8px;
-}
+} */
 
-button {
+/* button {
   border: 1px solid rgb(75, 75, 75);
   border-radius: 6px;
   padding: 4px 8px;
@@ -49,8 +49,7 @@ button:disabled {
 
 button:not(:disabled):hover {
   border-width: 2px;
-}
-
+} */
 .error {
   color: red;
   border-color: red;
@@ -93,9 +92,9 @@ td {
   text-align: center;
   position: relative;
 }
-
+/* 
 @media screen and (max-width: 768px) {
   body {
     padding: 0 10px 20px 10px;
   }
-}
+} */

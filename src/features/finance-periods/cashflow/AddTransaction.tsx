@@ -7,6 +7,7 @@ import { useAppDispatch } from "../../../app/hooks"
 import "./AddTransaction.css"
 import { incomeAdded, paymentAdded } from "./cashflowSlice"
 import SelectTransactionCategory from "./SelectTransactionCategory"
+import { Button, TextField } from "@radix-ui/themes"
 
 export interface AddTransactionProps {
   periodId: FinancePeriod["id"]
@@ -35,6 +36,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
 
   const [newTransaction, setNewTransaction] =
     useState<Omit<CashflowItem, "id">>(sampleTransaction)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const errorMessage = <span className="error">{error}</span>
@@ -43,6 +45,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
     // 1. Determines transactionType
     // 2. If it's payment, submitPayment()
     // 3. If it's income, submitIncome()
+    setIsLoading(true)
     const newTransactionIsFilled =
       newTransaction.title.length > 0 &&
       newTransaction.amount > 0 &&
@@ -56,6 +59,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
       transaction.type === "income/forward-payment"
     if (!newTransactionIsFilled) {
       setError("Заполните все поля транзакции")
+      setIsLoading(false)
       return
     }
 
@@ -68,6 +72,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
     }
 
     setNewTransaction({ ...sampleTransaction, type: transaction.type })
+    setIsLoading(false)
   }
 
   function submitPayment(payment: Omit<CashflowItem, "id">) {
@@ -119,12 +124,11 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
       />
       <div className="title form-item">
         <label htmlFor="transaction-title">Название: </label>
-        <input
+        <TextField.Root
           type="text"
           name="title"
           id="transaction-title"
           required
-          size={16}
           value={newTransaction.title}
           onFocus={e => e.target.select()}
           onChange={handleNewPaymentChange}
@@ -132,7 +136,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
       </div>
       <div className="amount form-item">
         <label htmlFor="transaction-amount">Сумма: </label>
-        <input
+        <TextField.Root
           type="number"
           name="amount"
           id="transaction-amount"
@@ -156,12 +160,16 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
       </div>
       {error && errorMessage}
       <div className="actions form-item">
-        <button onClick={() => handleNewTransaction(newTransaction)}>
+        <Button
+          variant="surface"
+          loading={isLoading}
+          onClick={() => handleNewTransaction(newTransaction)}
+        >
           <span className="material-symbols-outlined">add</span>
           <span>
             Добавить {transactionType === "outcome" ? "платеж" : "доход"}
           </span>
-        </button>
+        </Button>
       </div>
     </form>
   )
