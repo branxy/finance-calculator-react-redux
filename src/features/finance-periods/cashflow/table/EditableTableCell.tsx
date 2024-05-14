@@ -11,6 +11,12 @@ interface EditableTableCellProps {
   cellValue: string | number
 }
 
+const inputType = {
+  title: "text",
+  amount: "number",
+  date: "text",
+}
+
 const EditableTableCell: FunctionComponent<EditableTableCellProps> = ({
   cashflowItemId,
   cellType,
@@ -26,16 +32,22 @@ const EditableTableCell: FunctionComponent<EditableTableCellProps> = ({
   }
 
   function handleInputBlur() {
-    setIsEditing(false)
-    setIsHovered(false)
+    const inputDoesntExceedLimits =
+      (cellType === "amount" && Number(inputValue) <= 100000000000) ||
+      cellType !== "amount"
 
-    dispatch(
-      cashflowItemChanged({
-        cashflowItemId,
-        whatChanged: cellType,
-        newValue: cellType === "amount" ? Number(inputValue) : inputValue,
-      }),
-    )
+    if (inputDoesntExceedLimits) {
+      dispatch(
+        cashflowItemChanged({
+          cashflowItemId,
+          whatChanged: cellType,
+          newValue: cellType === "amount" ? Number(inputValue) : inputValue,
+        }),
+      )
+
+      setIsEditing(false)
+      setIsHovered(false)
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -48,8 +60,11 @@ const EditableTableCell: FunctionComponent<EditableTableCellProps> = ({
     return (
       <td className="editable">
         <input
-          type="text"
+          type={inputType[cellType]}
+          id="table-cell-input"
+          name="table-cell-input"
           value={inputValue}
+          max="1000000000"
           autoFocus={isEditing}
           onFocus={e => e.target.select()}
           onChange={e => setInputValue(e.target.value)}

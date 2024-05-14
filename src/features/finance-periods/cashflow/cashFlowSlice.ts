@@ -149,24 +149,19 @@ export const cashflowSlice = createAppSlice({
         } = getState() as RootState
 
         if (whatChanged === "amount" && typeof newValue === "number") {
-          if (newValue >= 0 && newValue <= 100000000000) {
-            const currentItem = entities[cashflowItemId]
-            if (currentItem) {
-              // dispatch balanceChanged() to periodsSlice
-              const difference = newValue - currentItem.amount
-              dispatch(
-                endBalanceChanged({
-                  periodId: currentItem.period_id,
-                  whatChanged:
-                    currentItem.type === "income/profit" ? "income" : "payment",
-                  difference,
-                }),
-              )
-            }
-          } else
-            throw new Error(
-              `The value on new amount is outside accepted limits: ${newValue}`,
+          const currentItem = entities[cashflowItemId]
+          if (currentItem) {
+            // dispatch balanceChanged() to periodsSlice
+            const difference = newValue - currentItem.amount
+            dispatch(
+              endBalanceChanged({
+                periodId: currentItem.period_id,
+                whatChanged:
+                  currentItem.type === "income/profit" ? "income" : "payment",
+                difference,
+              }),
             )
+          }
         }
 
         const updatedValue = await updateTransaction({
