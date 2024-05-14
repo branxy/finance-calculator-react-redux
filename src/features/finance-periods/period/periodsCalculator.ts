@@ -21,6 +21,16 @@ export interface SinglePeriodChanges {
 
 export type PeriodsChanges = SinglePeriodChanges[]
 
+interface ValueToUpdate {
+  id: FinancePeriod["id"]
+  changes: {
+    start_balance: FinancePeriod["start_balance"]
+    end_balance: FinancePeriod["end_balance"]
+  }
+}
+
+export type ValuesToUpdate = ValueToUpdate[]
+
 export function getSumOfTransactionsByType(
   transactions: Cashflow,
 ): SumOfTransactionsByType {
@@ -104,6 +114,30 @@ export function getPeriodsChangesOnTransactionsDelete(
         end_balance: newEndBalanceForPeriod,
         stock: newStock,
         forward_payments: newFP,
+      },
+    })
+  }
+
+  return valuesToUpdate
+}
+
+export function getPeriodsOnStartBalanceChange(
+  periods: Periods,
+  currentPeriodIndex: number,
+  balanceDifference: number,
+): ValuesToUpdate {
+  const valuesToUpdate: ValuesToUpdate = []
+
+  for (let i = currentPeriodIndex; i < periods.length; i++) {
+    const p = periods[i]
+    const newStartBalanceForPeriod = p.start_balance - balanceDifference
+    const newEndBalanceForPeriod = p.end_balance - balanceDifference
+
+    valuesToUpdate.push({
+      id: p.id,
+      changes: {
+        start_balance: newStartBalanceForPeriod,
+        end_balance: newEndBalanceForPeriod,
       },
     })
   }

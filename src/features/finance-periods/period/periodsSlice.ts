@@ -14,13 +14,12 @@ import {
 } from "../api/periodsApi"
 import { type RootState } from "../../../app/store"
 import { createAppSelector } from "../../../app/hooks"
+import { deletedCashflowItems } from "../cashflow/cashflowSlice"
 import {
-  deletedCashflowItems,
-  deletedPeriodCashflow,
-} from "../cashflow/cashflowSlice"
-import {
+  type ValuesToUpdate,
   getPeriodsChangesOnTransactionsDelete,
   getSumOfTransactionsByType,
+  getPeriodsOnStartBalanceChange,
 } from "./periodsCalculator"
 
 interface InitialState {
@@ -38,16 +37,6 @@ interface ChangeStartDateProps {
   periodId: FinancePeriod["id"]
   newStartDate: FinancePeriod["start_date"]
 }
-
-interface ValueToUpdate {
-  id: FinancePeriod["id"]
-  changes: {
-    start_balance: FinancePeriod["start_balance"]
-    end_balance: FinancePeriod["end_balance"]
-  }
-}
-
-export type ValuesToUpdate = ValueToUpdate[]
 
 interface CompensationToUpdate {
   id: FinancePeriod["id"]
@@ -215,35 +204,14 @@ export const periodsSlice = createAppSlice({
         const currentPeriod = periods[currentPeriodIndex]
 
         if (currentPeriod) {
-          const valuesToUpdate: ValuesToUpdate = []
+          const balanceDifference =
+            currentPeriod.start_balance - newStartBalance
 
-          for (let i = currentPeriodIndex; i < periods.length; i++) {
-            const p = periods[i]
-            let newStartBalanceForPeriod
-            let newEndBalanceForPeriod
-            let difference
-
-            if (newStartBalance >= currentPeriod.start_balance) {
-              // if the new start balance is greater or equal than current, just add the difference to every period
-              difference = newStartBalance - currentPeriod.start_balance
-              newStartBalanceForPeriod = p.start_balance + difference
-              newEndBalanceForPeriod = p.end_balance + difference
-            } else {
-              // if the new start balance is lesser than current, substract the difference from every period
-
-              difference = currentPeriod.start_balance - newStartBalance
-              newStartBalanceForPeriod = p.start_balance - difference
-              newEndBalanceForPeriod = p.end_balance - difference
-            }
-
-            valuesToUpdate.push({
-              id: p.id,
-              changes: {
-                start_balance: newStartBalanceForPeriod,
-                end_balance: newEndBalanceForPeriod,
-              },
-            })
-          }
+          const valuesToUpdate = getPeriodsOnStartBalanceChange(
+            periods,
+            currentPeriodIndex,
+            balanceDifference,
+          )
 
           const periodsToUpdate = await updatePeriodsBalance(valuesToUpdate)
 
