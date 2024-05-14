@@ -47,7 +47,8 @@ export function generateTestCashflow(
 
     arr.push({
       id: uuidv4(),
-      period_id: "1",
+      period_id: "2",
+      user_id: "2-user-id",
       type: "payment/fixed",
       title,
       amount,

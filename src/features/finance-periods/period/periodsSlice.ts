@@ -18,6 +18,10 @@ import {
   deletedCashflowItems,
   deletedPeriodCashflow,
 } from "../cashflow/cashflowSlice"
+import {
+  getPeriodsChangesOnTransactionsDelete,
+  getSumOfTransactionsByType,
+} from "./periodsCalculator"
 
 interface InitialState {
   periods: Periods
@@ -79,22 +83,33 @@ export type DeletedTransactionsUpdate = DeletedTransactionUpdate[]
 
 const periodsAdapter = createEntityAdapter<FinancePeriod>()
 
-const samplePeriod = {
-  id: "1",
-  user_id: "1-user-id",
-  start_date: getTodayDate(),
-  start_balance: 0,
-  end_balance: 0,
-  stock: 46950,
-  forward_payments: 23000,
-}
+const samplePeriods = [
+  {
+    id: "1",
+    user_id: "1-user-id",
+    start_date: getTodayDate(),
+    start_balance: 10000,
+    end_balance: 10000,
+    stock: 45000,
+    forward_payments: 23000,
+  },
+  {
+    id: "2",
+    user_id: "2-user-id",
+    start_date: getTodayDate(),
+    start_balance: 10000,
+    end_balance: -20000,
+    stock: 45000,
+    forward_payments: 23000,
+  },
+]
 
 const initialState = periodsAdapter.getInitialState(
   {
     status: "idle",
     error: null,
   },
-  [samplePeriod],
+  samplePeriods,
 )
 
 export const periodsSlice = createAppSlice({
@@ -617,44 +632,9 @@ export const periodsSlice = createAppSlice({
         const deletedTransactions = cashflow.filter(c =>
           deletedTransactionsIds.includes(c.id),
         )
-        // First, sum all transactions by type
-        const sumOfTransactions = {
-          income: 0,
-          spend: 0,
-          stockIncome: 0,
-          stockSpent: 0,
-          forwardPaymentsIncome: 0,
-          forwardPaymentsSpent: 0,
-        }
-
-        for (let i = 0; i < deletedTransactions.length; i++) {
-          const transaction = deletedTransactions[i]
-          const { amount } = transaction
-
-          switch (transaction.type) {
-            case "income/profit":
-              sumOfTransactions.income -= amount
-              break
-            case "income/stock":
-              sumOfTransactions.stockIncome += amount
-              break
-            case "income/forward-payment":
-              sumOfTransactions.forwardPaymentsIncome += amount
-              break
-            case "payment/fixed":
-            case "payment/variable":
-              sumOfTransactions.spend += amount
-              break
-            case "compensation/stock":
-              sumOfTransactions.stockSpent += amount
-              break
-            case "compensation/forward-payment":
-              sumOfTransactions.forwardPaymentsSpent += amount
-              break
-            default:
-              throw new Error(`Unknown transaction type: ${transaction.type}`)
-          }
-        }
+        //1. Sum all transactions by type
+        const sumOfTransactions =
+          getSumOfTransactionsByType(deletedTransactions)
 
         const periods = Object.values(entities)
         const currentPeriodIndex = periods.findIndex(p => p.id === periodId)
@@ -664,46 +644,18 @@ export const periodsSlice = createAppSlice({
           : currentPeriodIndex
 
         if (currentPeriod) {
-          const valuesToUpdate: DeletedTransactionsUpdate = []
+          // 2. Calculate balance changes for each period
+          const valuesToUpdate = getPeriodsChangesOnTransactionsDelete(
+            periods,
+            indexToStartFrom,
+            sumOfTransactions,
+            currentPeriodWasDeleted,
+          )
 
-          for (let i = indexToStartFrom; i < periods.length; i++) {
-            const p = periods[i]
-            const {
-              income,
-              spend,
-              stockIncome,
-              stockSpent,
-              forwardPaymentsIncome,
-              forwardPaymentsSpent,
-            } = sumOfTransactions
-            const interimBalance = -income + spend
-            const submittedSavings = stockSpent + forwardPaymentsSpent
-            let newStartBalanceForPeriod = p.start_balance + interimBalance,
-              newEndBalanceForPeriod =
-                p.end_balance + interimBalance - submittedSavings,
-              newStock = p.stock - stockIncome + stockSpent,
-              newFP =
-                p.forward_payments -
-                forwardPaymentsIncome +
-                forwardPaymentsSpent
-
-            if (i === currentPeriodIndex) {
-              newStartBalanceForPeriod = p.start_balance
-            }
-
-            valuesToUpdate.push({
-              id: p.id,
-              changes: {
-                start_balance: newStartBalanceForPeriod,
-                end_balance: newEndBalanceForPeriod,
-                stock: newStock,
-                forward_payments: newFP,
-              },
-            })
-          }
-
+          // 3. Upload changes to DB
           const periodsToUpdate = await updateDeletedCashflow(valuesToUpdate)
 
+          // 4. Pass changes to reducer
           return { periodsToUpdate }
         } else {
           throw new Error(`Period with id ${periodId} not found`)

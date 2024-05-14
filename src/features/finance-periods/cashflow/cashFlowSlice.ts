@@ -40,23 +40,26 @@ const sampleCashflowItem: CashflowItem = {
 }
 
 const testCashflow = generateTestCashflow(
-  undefined,
-  ["Аренда", "Аренда", "Аренда"],
-  [20000, 34000, 4000],
+  5,
+  ["exp1", "exp2", "exp3", "exp4", "exp5"],
+  [10000, 4000, 6000, 5000, 5000],
 )
 
 const casfhlowAdapter = createEntityAdapter<CashflowItem>()
-const initialState = casfhlowAdapter.getInitialState({
-  status: "idle",
-  error: null,
-})
+const initialState = casfhlowAdapter.getInitialState(
+  {
+    status: "idle",
+    error: null,
+  },
+  testCashflow,
+)
 
 export const cashflowSlice = createAppSlice({
   name: "cashflow",
   initialState,
   reducers: create => ({
     paymentAdded: create.asyncThunk(
-      async (newPayment: CashflowItem, { dispatch }) => {
+      async (newPayment: CashflowItem, { dispatch, getState }) => {
         dispatch(
           paymentAddedFromCashflow({
             periodId: newPayment.period_id,
