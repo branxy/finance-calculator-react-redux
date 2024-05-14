@@ -32,6 +32,7 @@ import { createEntityAdapter } from "@reduxjs/toolkit"
 const sampleCashflowItem: CashflowItem = {
   id: uuidv4(),
   period_id: "1",
+  user_id: "1-user-id",
   type: "payment/fixed",
   title: "Аренда квартиры",
   amount: 20000,
@@ -212,9 +213,11 @@ export const cashflowSlice = createAppSlice({
       async (
         {
           periodId,
+          userId,
           compensationAmount,
         }: {
           periodId: FinancePeriod["id"]
+          userId: FinancePeriod["user_id"]
           compensationAmount: CompensationAmount
         },
         { dispatch },
@@ -230,6 +233,7 @@ export const cashflowSlice = createAppSlice({
           newCompensations.push({
             id: uuidv4(),
             period_id: periodId,
+            user_id: userId,
             type: "compensation/stock",
             title: "compensation from stock",
             amount: compensationAmount.stock,
@@ -241,6 +245,7 @@ export const cashflowSlice = createAppSlice({
           newCompensations.push({
             id: uuidv4(),
             period_id: periodId,
+            user_id: userId,
             type: "compensation/forward-payment",
             title: "compensation from forward payment",
             amount: compensationAmount.fp,

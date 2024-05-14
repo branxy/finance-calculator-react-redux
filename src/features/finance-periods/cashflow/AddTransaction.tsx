@@ -28,6 +28,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
 
   const sampleTransaction: Omit<CashflowItem, "id"> = {
     period_id: periodId,
+    user_id: "1-user-id",
     type: undefined,
     title: "",
     amount: 0,

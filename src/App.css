@@ -1,5 +1,10 @@
 .App {
+  width: 100%;
   padding: 0 20px 32px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 /* .payments-content {

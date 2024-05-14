@@ -1,6 +1,6 @@
 import { type FunctionComponent, type ReactNode, useState } from "react"
 import "./Dropdown.css"
-import { Box, Button, Flex, Heading } from "@radix-ui/themes"
+import { Button, Flex, Heading } from "@radix-ui/themes"
 
 interface DropdownProps {
   children: ReactNode

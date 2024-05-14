@@ -13,6 +13,7 @@ export type Periods = FinancePeriod[]
 export interface CashflowItem {
   id: string
   period_id: FinancePeriod["id"]
+  user_id: FinancePeriod["user_id"]
   type?:
     | "income/profit"
     | "income/stock"

@@ -81,12 +81,12 @@ const periodsAdapter = createEntityAdapter<FinancePeriod>()
 
 const samplePeriod = {
   id: "1",
-  user_id: uuidv4(),
+  user_id: "1-user-id",
   start_date: getTodayDate(),
   start_balance: 0,
   end_balance: 0,
-  stock: 6000,
-  forward_payments: 12000,
+  stock: 46950,
+  forward_payments: 23000,
 }
 
 const initialState = periodsAdapter.getInitialState(

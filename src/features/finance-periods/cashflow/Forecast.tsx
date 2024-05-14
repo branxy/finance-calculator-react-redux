@@ -5,7 +5,7 @@ import "./Forecast.css"
 import {
   compensationSubmitted,
   selectSumOfStockAndFPCompensationsByPeriodId,
-} from ".././cashflow/cashflowSlice"
+} from "./cashflowSlice"
 import { Box, Button, Flex, TextField } from "@radix-ui/themes"
 
 export type EarningsT = {
@@ -46,6 +46,7 @@ export type VariablePaymentsT = {
 
 interface ForecastProps {
   periodId: FinancePeriod["id"]
+  user_id: FinancePeriod["user_id"]
   start_balance: FinancePeriod["start_balance"]
   end_balance: FinancePeriod["end_balance"]
   earnings: EarningsT
@@ -57,6 +58,7 @@ interface ForecastProps {
 
 const Forecast: FunctionComponent<ForecastProps> = ({
   periodId,
+  user_id,
   start_balance,
   end_balance,
   earnings,
@@ -108,6 +110,7 @@ const Forecast: FunctionComponent<ForecastProps> = ({
       dispatch(
         compensationSubmitted({
           periodId,
+          userId: user_id,
           compensationAmount: {
             stock: sumToCompensateStock,
             fp: sumToCompensateForwardPayments,

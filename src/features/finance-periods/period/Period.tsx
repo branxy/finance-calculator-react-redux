@@ -124,6 +124,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
         </Dropdown>
         <Forecast
           periodId={id}
+          user_id={user_id}
           start_balance={start_balance}
           end_balance={end_balance}
           earnings={earnings}
