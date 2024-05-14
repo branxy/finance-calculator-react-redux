@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from "uuid"
-import { type FunctionComponent, useState } from "react"
+import { type FunctionComponent, useState, useContext } from "react"
 import type { CashflowItem, FinancePeriod } from "../types"
-import { getTodayDate } from "../../../utils"
 import { useAppDispatch } from "../../../app/hooks"
 
 import "./AddTransaction.css"
 import { incomeAdded, paymentAdded } from "./cashflowSlice"
 import SelectTransactionCategory from "./SelectTransactionCategory"
 import { Button, TextField } from "@radix-ui/themes"
+import { PeriodContext } from "../period/Period"
 
 export interface AddTransactionProps {
   periodId: FinancePeriod["id"]
@@ -22,8 +22,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
   transactionType,
   end_balance,
 }) => {
-  const today = getTodayDate()
-
+  const { start_date: periodStartDate } = useContext(PeriodContext)!
   const dispatch = useAppDispatch()
 
   const sampleTransaction: Omit<CashflowItem, "id"> = {
@@ -32,7 +31,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
     type: undefined,
     title: "",
     amount: 0,
-    date: today,
+    date: "",
   }
 
   const [newTransaction, setNewTransaction] =
@@ -154,7 +153,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
           type="date"
           name="date"
           id="transaction-date"
-          value={newTransaction.date}
+          value={newTransaction.date || periodStartDate}
           required={true}
           onChange={handleNewPaymentChange}
         />

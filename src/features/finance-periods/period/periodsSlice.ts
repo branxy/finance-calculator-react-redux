@@ -193,8 +193,6 @@ export const periodsSlice = createAppSlice({
         },
         { getState },
       ) => {
-        // assemble a record of all periods' balances that need to be updated and pass to updatePeriodsBalance()
-
         const {
           periods: { entities },
         } = getState() as RootState
@@ -207,6 +205,7 @@ export const periodsSlice = createAppSlice({
           const balanceDifference =
             currentPeriod.start_balance - newStartBalance
 
+          // assemble a record of all periods' balances that need to be updated and pass to updatePeriodsBalance()
           const valuesToUpdate = getPeriodsOnStartBalanceChange(
             periods,
             currentPeriodIndex,
@@ -716,11 +715,6 @@ const getId = (
 ): FinancePeriod["id"] => id
 
 const getIndex = (state: RootState, index: number): number => index
-
-// export const selectPeriodById = createAppSelector(
-//   [selectAllPeriods, getId],
-//   (state, id) => state.find(p => p.id === id),
-// )
 
 export const selectPeriodStartDateByIndex = createAppSelector(
   [selectAllPeriods, getIndex],

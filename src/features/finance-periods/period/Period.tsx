@@ -1,4 +1,4 @@
-import { type FunctionComponent } from "react"
+import { createContext, type FunctionComponent } from "react"
 import { useAppDispatch, useAppSelector } from "../../../app/hooks"
 import {
   periodAdded,
@@ -31,8 +31,11 @@ interface PeriodProps {
   daysToNewPeriod: number | undefined
 }
 
+export const PeriodContext = createContext<FinancePeriod | null>(null)
+
 const Period: FunctionComponent<PeriodProps> = props => {
   const { id, index, daysToNewPeriod } = props
+  const period = useAppSelector(state => selectPeriodById(state, id))
   const {
     user_id,
     start_date,
@@ -40,7 +43,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
     end_balance,
     stock,
     forward_payments,
-  } = useAppSelector(state => selectPeriodById(state, id))
+  } = period
   const dispatch = useAppDispatch()
 
   const earnings = useAppSelector(state =>
@@ -82,7 +85,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
   }
 
   return (
-    <>
+    <PeriodContext.Provider value={period}>
       {index > 0 && <Separator size="4" mt="4" />}
       <Flex direction="column" gap="2" mt="6" width="100%">
         <PeriodHeader id={id} start_date={start_date} />
@@ -140,7 +143,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
           </Button>
         </div>
       </Flex>
-    </>
+    </PeriodContext.Provider>
   )
 }
 
