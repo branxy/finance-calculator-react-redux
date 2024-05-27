@@ -1,5 +1,5 @@
-import { getTodayDate } from "../../../utils"
-import type { Cashflow, CashflowItem } from "../types"
+import { getTodayDate } from "../../utils"
+import type { Cashflow, CashflowItem } from "../finance-periods/types"
 import { v4 as uuidv4 } from "uuid"
 
 export async function uploadTransaction(

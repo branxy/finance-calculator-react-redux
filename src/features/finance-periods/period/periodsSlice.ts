@@ -10,10 +10,9 @@ import {
   uploadNewSavings,
   updateDeletedCashflow,
   deletePeriodFromDB,
-} from "../api/periodsApi"
+} from "../periodsApi"
 import { type RootState } from "../../../app/store"
 import { createAppSelector } from "../../../app/hooks"
-import { deletedCashflowItems } from "../cashflow/cashflowSlice"
 import {
   type ValuesToUpdate,
   getPeriodsChangesOnTransactionsDelete,
@@ -25,6 +24,7 @@ import {
   getPeriodsOnSavingsAddedFromCashflow,
   getPeriodsOnCompensationSubmittedFromCashflow,
 } from "./periodsCalculator"
+import { deletedCashflowItems } from "../../cashflow/cashflowSlice"
 
 interface InitialState {
   periods: Periods

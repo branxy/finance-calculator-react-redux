@@ -1,11 +1,13 @@
-import { getTodayDate } from "../../../utils"
+import { getTodayDate } from "../../utils"
 import {
   type CompensationsToUpdate,
+  type ValuesToUpdate,
+} from "./period/periodsCalculator"
+import {
   type DeletedTransactionsUpdate,
   type PaymentSubmittedUpdates,
-  type ValuesToUpdate,
-} from "../period/periodsSlice"
-import type { FinancePeriod, Periods, StockCompensations } from "../types"
+} from "./period/periodsSlice"
+import type { FinancePeriod, Periods, StockCompensations } from "./types"
 import { v4 as uuidv4 } from "uuid"
 
 const samplePeriod: FinancePeriod = {

@@ -1,9 +1,9 @@
 import { type FunctionComponent } from "react"
 import { type AddTransactionProps } from "./AddTransaction"
-import type { CashflowItem } from "../types"
+import type { CashflowItem } from "../finance-periods/types"
 
-import "./AddTransaction.css"
 import { Box, Select } from "@radix-ui/themes"
+import "./AddTransaction.css"
 
 interface SelectTransactionCategoryProps {
   transactionType: AddTransactionProps["transactionType"]
@@ -22,8 +22,6 @@ const SelectTransactionCategory: FunctionComponent<
       <>
         <Select.Item value="payment/fixed">Обязательный</Select.Item>
         <Select.Item value="payment/variable">Остальное</Select.Item>
-        {/* <option value="payment/fixed">Обязательный</option>
-        <option value="payment/variable">Остальное</option> */}
       </>
     )
   } else if (transactionType === "income") {
@@ -54,20 +52,6 @@ const SelectTransactionCategory: FunctionComponent<
         <Select.Trigger placeholder="Выбрать" style={{ width: "134px" }} />
         <Select.Content>{select}</Select.Content>
       </Select.Root>
-      {/* 
-      <select
-        name="category"
-        onChange={e =>
-          setNewTransaction(prev => {
-            const paymentType = e.target.value as CashflowItem["type"]
-            return { ...prev, type: paymentType }
-          })
-        }
-        required={true}
-      >
-        <option value={undefined}>-Выбрать-</option>
-        {select}
-      </select> */}
     </Box>
   )
 }

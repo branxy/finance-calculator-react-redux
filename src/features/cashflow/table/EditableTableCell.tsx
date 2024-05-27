@@ -1,9 +1,9 @@
 import { useState, type FunctionComponent } from "react"
-import type { CashflowItem } from "../../types"
-import { useAppDispatch } from "../../../../app/hooks"
+import type { CashflowItem } from "../../finance-periods/types"
 import "./CashflowTable.css"
 import { cashflowItemChanged } from "../cashflowSlice"
 import "./CashflowTable.css"
+import { useAppDispatch } from "../../../app/hooks"
 
 interface EditableTableCellProps {
   cashflowItemId: CashflowItem["id"]

@@ -11,16 +11,16 @@ import Forecast, {
   type EarningsT,
   type VariablePaymentsT,
   type AllPayments,
-} from "../cashflow/Forecast"
+} from "../../cashflow/Forecast"
 import {
   selectAllPaymentsByPeriodId,
   selectEarningsByPeriodId,
   selectFixedPaymentsByPeriodId,
   selectVariablePaymentsByPeriodId,
-} from "../cashflow/cashflowSlice"
+} from "../../cashflow/cashflowSlice"
 
 import DaysToNewPeriod from "./DaysToNewPeriod"
-import AllTransactions from "../cashflow/AllTransactions"
+import AllTransactions from "../../cashflow/AllTransactions"
 import type { FinancePeriod } from "../types"
 import { Box, Button, Flex, Separator, TextField } from "@radix-ui/themes"
 import PeriodHeader from "./PeriodHeader"

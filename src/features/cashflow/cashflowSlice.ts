@@ -1,21 +1,20 @@
-import { createAppSlice } from "../../../app/createAppSlice"
 import type {
   Cashflow,
   CashflowItem,
   FinancePeriod,
   FPCompensations,
-} from "../types"
+} from "../finance-periods/types"
 import { v4 as uuidv4 } from "uuid"
-import { getTodayDate } from "../../../utils"
-import { type RootState } from "../../../app/store"
-import { createAppSelector } from "../../../app/hooks"
+import { getTodayDate } from "../../utils"
+import { type RootState } from "../../../src/app/store"
+import { createAppSelector } from "../../../src/app/hooks"
 import {
   deleteCashflowItems,
   generateTestCashflow,
   updateTransaction,
   uploadCompensations,
   uploadTransaction,
-} from "../api/cashflowApi"
+} from "./cashflowApi"
 import {
   type CompensationAmount,
   compensationSubmittedFromCashflow,
@@ -24,8 +23,9 @@ import {
   paymentAddedFromCashflow,
   savingsAddedFromCashflow,
   cashflowDeletedFromCashflow,
-} from "../period/periodsSlice"
+} from "../finance-periods/period/periodsSlice"
 import { createEntityAdapter } from "@reduxjs/toolkit"
+import { createAppSlice } from "../../app/createAppSlice"
 
 const sampleCashflowItem: CashflowItem = {
   id: uuidv4(),

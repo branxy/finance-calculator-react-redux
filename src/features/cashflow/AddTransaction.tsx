@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from "uuid"
 import { type FunctionComponent, useState, useContext } from "react"
-import type { CashflowItem, FinancePeriod } from "../types"
-import { useAppDispatch } from "../../../app/hooks"
+import type { CashflowItem, FinancePeriod } from "../finance-periods/types"
 
 import "./AddTransaction.css"
 import { incomeAdded, paymentAdded } from "./cashflowSlice"
 import SelectTransactionCategory from "./SelectTransactionCategory"
 import { Button, TextField } from "@radix-ui/themes"
-import { PeriodContext } from "../period/Period"
+import { useAppDispatch } from "../../app/hooks"
+import { PeriodContext } from "../finance-periods/period/Period"
 
 export interface AddTransactionProps {
   periodId: FinancePeriod["id"]

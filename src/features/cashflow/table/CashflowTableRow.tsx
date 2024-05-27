@@ -1,5 +1,5 @@
 import { type FunctionComponent } from "react"
-import type { CashflowItem, FinancePeriod } from "../../types"
+import type { CashflowItem, FinancePeriod } from "../../finance-periods/types"
 import EditableTableCell from "./EditableTableCell"
 
 interface CashflowTableRowProps {
@@ -26,8 +26,6 @@ const CashflowTableRow: FunctionComponent<CashflowTableRowProps> = ({
   const isSelectedRow = Boolean(
     selectedTransactions?.find(id => id === casfhlowItemId),
   )
-
-  const shortenedDate = new Date(date).toLocaleDateString().slice(0, 5)
 
   return (
     <tr className={`cashflow-item ${isSelectedRow ? "selected" : ""}`}>

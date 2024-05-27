@@ -1,8 +1,10 @@
-import { type FunctionComponent } from "react"
-import type { CashflowItem, FinancePeriod } from "../../types"
-import { useAppDispatch } from "../../../../app/hooks"
-import { deletedCashflowItems } from "../cashflowSlice"
 import { Button } from "@radix-ui/themes"
+
+import { type FunctionComponent } from "react"
+import type { CashflowItem, FinancePeriod } from "../../finance-periods/types"
+
+import { deletedCashflowItems } from "../cashflowSlice"
+import { useAppDispatch } from "../../../app/hooks"
 
 interface CashflowTableActionButtonsProps {
   periodId: FinancePeriod["id"]

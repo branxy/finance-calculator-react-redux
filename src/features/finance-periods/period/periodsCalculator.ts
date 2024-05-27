@@ -41,7 +41,7 @@ interface CompensationToUpdate {
   // savingType: "income/stock" | "income/forward-payment"
 }
 
-type CompensationsToUpdate = CompensationToUpdate[]
+export type CompensationsToUpdate = CompensationToUpdate[]
 
 interface PaymentSubmittedSingle {
   id: FinancePeriod["id"]

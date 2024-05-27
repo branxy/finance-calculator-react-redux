@@ -1,5 +1,5 @@
 import { type FunctionComponent } from "react"
-import type { FinancePeriod } from "../types"
+import type { FinancePeriod } from "../finance-periods/types"
 import AddTransaction from "./AddTransaction"
 import { Heading } from "@radix-ui/themes"
 

@@ -1,11 +1,11 @@
 import { type FunctionComponent } from "react"
-import type { FinancePeriod } from "../types"
+import type { FinancePeriod } from "../finance-periods/types"
 import { type AllPayments, type EarningsT } from "./Forecast"
 import Earnings from "./Earnings"
 import Payments from "./Payments"
 import CashflowTable from "./table/CashflowTable"
-import { useAppSelector } from "../../../app/hooks"
 import { selectAllCashflowByPeriodId } from "./cashflowSlice"
+import { useAppSelector } from "../../app/hooks"
 
 export interface AllTransactionsProps {
   periodId: FinancePeriod["id"]

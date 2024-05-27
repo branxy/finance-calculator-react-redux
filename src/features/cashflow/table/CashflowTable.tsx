@@ -2,7 +2,11 @@ import { useState, type FunctionComponent } from "react"
 import CashflowTableRow from "./CashflowTableRow"
 import "./CashflowTable.css"
 import { type AllTransactionsProps } from "../AllTransactions"
-import type { Cashflow, CashflowItem, FinancePeriod } from "../../types"
+import type {
+  Cashflow,
+  CashflowItem,
+  FinancePeriod,
+} from "../../finance-periods/types"
 import CashflowTableActionButtons from "./CashflowTableActionButtons"
 
 export interface CashflowTableProps {

@@ -1,6 +1,6 @@
 import { useState, type FunctionComponent } from "react"
-import type { CashflowItem, FinancePeriod } from "../types"
-import { useAppDispatch, useAppSelector } from "../../../app/hooks"
+import type { CashflowItem, FinancePeriod } from "../finance-periods/types"
+import { useAppDispatch, useAppSelector } from "../../app/hooks"
 import "./Forecast.css"
 import {
   compensationSubmitted,

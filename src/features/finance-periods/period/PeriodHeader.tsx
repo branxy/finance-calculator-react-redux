@@ -3,7 +3,7 @@ import { useState, type FunctionComponent } from "react"
 import type { FinancePeriod } from "../types"
 import { useAppDispatch, useAppSelector } from "../../../app/hooks"
 import { deletedPeriod, startDateChanged } from "./periodsSlice"
-import { selectAllCashflowByPeriodId } from "../cashflow/cashflowSlice"
+import { selectAllCashflowByPeriodId } from "../../cashflow/cashflowSlice"
 
 interface PeriodHeaderProps {
   id: FinancePeriod["id"]
@@ -76,5 +76,3 @@ const PeriodHeader: FunctionComponent<PeriodHeaderProps> = ({
 }
 
 export default PeriodHeader
-
-
