@@ -2,10 +2,8 @@ import { createAppSlice } from "../../../app/createAppSlice"
 import type {
   Cashflow,
   CashflowItem,
-  CashFlowTable,
   FinancePeriod,
   FPCompensations,
-  StockCompensations,
 } from "../types"
 import { v4 as uuidv4 } from "uuid"
 import { getTodayDate } from "../../../utils"
@@ -51,7 +49,7 @@ const initialState = casfhlowAdapter.getInitialState(
     status: "idle",
     error: null,
   },
-  testCashflow,
+  // testCashflow,
 )
 
 export const cashflowSlice = createAppSlice({
@@ -152,6 +150,7 @@ export const cashflowSlice = createAppSlice({
           const currentItem = entities[cashflowItemId]
           if (currentItem) {
             // dispatch balanceChanged() to periodsSlice
+            //        20         100             80
             const difference = newValue - currentItem.amount
             dispatch(
               endBalanceChanged({
