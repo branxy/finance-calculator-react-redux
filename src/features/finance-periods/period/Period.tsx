@@ -90,7 +90,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
       <Flex direction="column" gap="2" mt="6" width="100%">
         <PeriodHeader id={id} start_date={start_date} />
         <Flex align="center" gap="2">
-          <label htmlFor="start-balance">Стартовый баланс: </label>
+          <label htmlFor="start-balance">Start balance: </label>
           {index === 0 ? (
             <Box maxWidth="250px">
               <TextField.Root
@@ -101,18 +101,18 @@ const Period: FunctionComponent<PeriodProps> = props => {
                 min="1"
                 onFocus={e => e.target.select()}
                 onChange={handleStartBalanceChange}
-                placeholder="0 руб."
+                placeholder="0 $"
               />
             </Box>
           ) : (
-            <span>{start_balance} руб.</span>
+            <span>{start_balance} $</span>
           )}
         </Flex>
         <DaysToNewPeriod
           periodIndex={index}
           daysToNewPeriod={daysToNewPeriod}
         />
-        <Dropdown title="Оборот" isOpenByDefault={true}>
+        <Dropdown title="Cashflow" isOpenByDefault={true}>
           <AllTransactions
             periodId={id}
             periodIndex={index}
@@ -139,7 +139,7 @@ const Period: FunctionComponent<PeriodProps> = props => {
         <div className="div">
           <Button size="3" onClick={handleAddFinancePeriod}>
             <span className="material-symbols-outlined">add</span>
-            <span>Добавить период</span>
+            <span>Add period</span>
           </Button>
         </div>
       </Flex>

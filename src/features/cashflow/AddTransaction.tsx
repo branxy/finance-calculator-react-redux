@@ -123,7 +123,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         setNewTransaction={setNewTransaction}
       />
       <div className="title form-item">
-        <label htmlFor="transaction-title">Название: </label>
+        <label htmlFor="transaction-title">Title: </label>
         <TextField.Root
           type="text"
           name="title"
@@ -135,7 +135,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         />
       </div>
       <div className="amount form-item">
-        <label htmlFor="transaction-amount">Сумма: </label>
+        <label htmlFor="transaction-amount">Amount: </label>
         <TextField.Root
           type="number"
           name="amount"
@@ -148,7 +148,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         />
       </div>
       <div className="date form-item">
-        <label htmlFor="transaction-date">Дата: </label>
+        <label htmlFor="transaction-date">Date: </label>
         <input
           type="date"
           name="date"
@@ -167,7 +167,7 @@ const AddTransaction: FunctionComponent<AddTransactionProps> = ({
         >
           <span className="material-symbols-outlined">add</span>
           <span>
-            Добавить {transactionType === "outcome" ? "платеж" : "доход"}
+            Add {transactionType === "outcome" ? "expense" : "income"}
           </span>
         </Button>
       </div>

@@ -20,17 +20,17 @@ const SelectTransactionCategory: FunctionComponent<
   if (transactionType === "outcome") {
     select = (
       <>
-        <Select.Item value="payment/fixed">Обязательный</Select.Item>
-        <Select.Item value="payment/variable">Остальное</Select.Item>
+        <Select.Item value="payment/fixed">Fixed</Select.Item>
+        <Select.Item value="payment/variable">Miscellaneous</Select.Item>
       </>
     )
   } else if (transactionType === "income") {
     select = (
       <>
-        <Select.Item value="income/profit">Прибыль</Select.Item>
-        <Select.Item value="income/stock">НЗ</Select.Item>
+        <Select.Item value="income/profit">Income</Select.Item>
+        <Select.Item value="income/stock">Savings</Select.Item>
         <Select.Item value="income/forward-payment">
-          Отложенные платежи
+          Forward payments
         </Select.Item>
       </>
     )
@@ -38,7 +38,7 @@ const SelectTransactionCategory: FunctionComponent<
 
   return (
     <Box className="category form-item">
-      <label htmlFor="category">Категория:</label>
+      <label htmlFor="category">Category:</label>
       <Select.Root
         name="category"
         required={true}
@@ -49,7 +49,7 @@ const SelectTransactionCategory: FunctionComponent<
           })
         }
       >
-        <Select.Trigger placeholder="Выбрать" style={{ width: "134px" }} />
+        <Select.Trigger placeholder="Select" style={{ width: "134px" }} />
         <Select.Content>{select}</Select.Content>
       </Select.Root>
     </Box>

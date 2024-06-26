@@ -17,11 +17,11 @@ const DaysToNewPeriod: FunctionComponent<DaysToNewPeriodProps> = ({
 
   if (typeof daysToNewPeriod === "number") {
     if (daysToNewPeriod > 0) {
-      return <span className="days">Период: {daysToNewPeriod} дней</span>
+      return <span className="days">Period: {daysToNewPeriod} days</span>
     } else if (daysToNewPeriod < 0 && nextPeriodStartDate) {
       return (
         <span className="error">
-          Дата текущего периода не должна быть позже следующего:{" "}
+          The date of the current period can't be later than the next one's:{" "}
           {nextPeriodStartDate}
         </span>
       )

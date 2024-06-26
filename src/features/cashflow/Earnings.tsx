@@ -13,7 +13,7 @@ const Earnings: FunctionComponent<EarningsProps> = ({
 }) => {
   return (
     <div className="earnings">
-      <h4>Доходы</h4>
+      <h4>Earnings</h4>
       <div className="content">
         <AddTransaction
           periodId={periodId}

@@ -19,7 +19,7 @@ const Payments: FunctionComponent<FixedPaymentsProps> = ({
   return (
     <div className="payments">
       <Heading as="h4" size="3">
-        Расходы
+        Expences
       </Heading>
       <AddTransaction
         periodId={periodId}

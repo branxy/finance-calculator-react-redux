@@ -83,7 +83,7 @@ const EditableTableCell: FunctionComponent<EditableTableCellProps> = ({
         <div className="title-edit">
           <span>
             {inputValue}
-            {cellType === "amount" && " руб."}
+            {cellType === "amount" && " $"}
           </span>
           {isHovered && (
             <button className="action" onClick={handleClickEdit}>

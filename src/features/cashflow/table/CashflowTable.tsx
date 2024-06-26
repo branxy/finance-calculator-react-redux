@@ -64,10 +64,10 @@ const CashflowTable: FunctionComponent<CashflowTableProps> = ({
   return (
     <div className="list">
       {fixedPaymentsSum > 0 && (
-        <p>Обязательные платежи: {fixedPaymentsSum} руб.</p>
+        <p>Обязательные платежи: {fixedPaymentsSum} $</p>
       )}
       {variablePaymentsSum > 0 && (
-        <p>Остальные платежи: {variablePaymentsSum} руб.</p>
+        <p>Остальные платежи: {variablePaymentsSum} $</p>
       )}
       <CashflowTableActionButtons
         periodId={periodId}

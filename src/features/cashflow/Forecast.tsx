@@ -88,7 +88,9 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   const compensations = `${sumOfStockCompensations > 0 ? ` + ${sumOfStockCompensations} (НЗ)` : ""}${sumOfFPCompensations > 0 ? ` + ${sumOfFPCompensations} (ОП)` : ""}`
 
   const error = compensationError && (
-    <span className="error">Сумма компенсации превышает сумму недостатка</span>
+    <span className="error">
+      The compensation amount can't be greater than shortage amount
+    </span>
   )
   const classError = `${compensationError && "error"}`
 
@@ -127,17 +129,17 @@ const Forecast: FunctionComponent<ForecastProps> = ({
   return (
     <div className="forecast">
       <span className="balance">
-        Баланс после трат: {start_balance}
+        End balance: {start_balance}
         <span>
           {" "}
           + <span className="income">{totalIncome ? totalIncome : "0"}</span>
         </span>{" "}
         - (<span className="payments">{fixedPayments + variablePayments}</span>)
-        {compensations} = {end_balance} руб.
+        {compensations} = {end_balance} $
       </span>
-      <span className="shortage">Недостаток: {shortage} руб.</span>
+      <span className="shortage">Shortage: {shortage} $</span>
       <div className="compensation" id="compensation">
-        <span>Резервы:</span>
+        <span>Reserve:</span>
         <form
           onSubmit={e => {
             e.preventDefault()
@@ -145,7 +147,7 @@ const Forecast: FunctionComponent<ForecastProps> = ({
           }}
         >
           <Flex className="item">
-            <label htmlFor="stock">НЗ: {stock} руб.</label>
+            <label htmlFor="stock">Savings: {stock} $</label>
             {stock > 0 && (
               <Box flexGrow="1" maxWidth="120px">
                 <TextField.Root
@@ -163,7 +165,7 @@ const Forecast: FunctionComponent<ForecastProps> = ({
           </Flex>
           <Flex gap="2">
             <label htmlFor="forward-payments">
-              Отложенные платежи: {forwardPayments} руб.
+              Forward payments: {forwardPayments} $
             </label>
             {forwardPayments > 0 && (
               <Box flexGrow="1" maxWidth="120px">
@@ -187,7 +189,7 @@ const Forecast: FunctionComponent<ForecastProps> = ({
             onClick={handleSubmitCompensation}
             disabled={!(compensationSum > 0) || compensationError}
           >
-            Внести компенсацию
+            Submit compensation
           </Button>
         </form>
       </div>
